@@ -32,38 +32,46 @@ export function AllCards(props: AllCardsProps) {
   const [tab, setTab] = createSignal(0);
 
   return (
-    <div class="min-w-0 flex-grow h-full group-[xxx.mobile]:h-50dvh group-[xxx.mobile]:flex-shrink-0 flex flex-col min-h-0">
-      <div class="flex flex-row gap-2 mb-2">
+    <div
+      class={`min-w-0 min-h-0 flex-1
+        h-[calc(100cqh-18.5rem)] @3xl:h-full DP:@3xl:h-full
+        flex flex-col
+        DP:hidden DP:h-0
+        @3xl:flex DP:@3xl:flex`}
+    >
+      <div class="flex flex-row mb-2">
         <button
-          class="data-[active=true]:font-bold"
+          class="data-[active]:font-bold rounded-l-full w-22 h-8 b-1 b-r-0 data-[active]:b-0 data-[active]:bg-blue-100"
           onClick={() => setTab(0)}
-          data-active={tab() === 0}
+          bool:data-active={tab() === 0}
         >
           角色牌
         </button>
         <button
-          class="data-[active=true]:font-bold"
+          class="data-[active]:font-bold rounded-r-full w-22 h-8 b-1 b-l-0 data-[active]:b-0 data-[active]:bg-blue-100"
           onClick={() => setTab(1)}
-          data-active={tab() === 1}
+          bool:data-active={tab() === 1}
         >
           行动牌
         </button>
         <Show
           when={!props.versionSpecified}
           fallback={
-            <span class="text-gray-500">
+            <span class="text-gray-500 ml-2">
               当前仅显示 {props.allVersions[props.version]} 及更低版本
             </span>
           }
         >
           <select
-            class="flex-grow border-black border-1px"
+            class="flex-grow b-1 rounded-full ml-2! outline-none focus:b-0 focus:bg-blue-100"
             value={props.version}
             onChange={(e) => props.onSetVersion?.(Number(e.target.value))}
           >
             <Index each={props.allVersions.toReversed()}>
               {(versionStr, index) => (
-                <option value={props.allVersions.length - 1 - index}>{versionStr()}</option>
+                <option value={props.allVersions.length - 1 - index}>
+                  {versionStr()}
+                </option>
               )}
             </Index>
           </select>
@@ -71,8 +79,8 @@ export function AllCards(props: AllCardsProps) {
       </div>
       <div class="min-h-0">
         <div
-          data-visible={tab() === 0}
-          class="h-full hidden data-[visible=true]:block"
+          bool:data-visible={tab() === 0}
+          class="h-full hidden data-[visible]:block"
         >
           <AllCharacterCards
             {...props}
@@ -80,8 +88,8 @@ export function AllCards(props: AllCardsProps) {
           />
         </div>
         <div
-          data-visible={tab() === 1}
-          class="h-full hidden data-[visible=true]:block"
+          bool:data-visible={tab() === 1}
+          class="h-full hidden data-[visible]:block"
         >
           <AllActionCards {...props} onSwitchTab={(tabNo) => setTab(tabNo)} />
         </div>

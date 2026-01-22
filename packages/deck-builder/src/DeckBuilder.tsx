@@ -25,6 +25,7 @@ import {
   createResource,
   Switch,
   Match,
+  createUniqueId,
 } from "solid-js";
 import { AllCards } from "./AllCards";
 import { CurrentDeck } from "./CurrentDeck";
@@ -45,11 +46,7 @@ export interface DeckBuilderProps extends JSX.HTMLAttributes<HTMLDivElement> {
 
 interface DeckBuilderContextValue {
   assetsManager: AssetsManager;
-  showCard: (
-    e: MouseEvent,
-    type: "actionCard" | "character",
-    id: number,
-  ) => void;
+  showCard: (e: Event, type: "actionCard" | "character", id: number) => void;
 }
 
 const DeckBuilderContext = createContext<DeckBuilderContextValue>();
@@ -73,6 +70,7 @@ export function DeckBuilder(props: DeckBuilderProps) {
     createCardDataViewer({
       assetsManager: untrack(() => local.assetsManager),
     });
+
   const [cardDataViewerOffsetX, setCardDataViewerOffsetX] = createSignal(0);
   const [cardDataViewerOffsetY, setCardDataViewerOffsetY] = createSignal(0);
 
@@ -91,6 +89,8 @@ export function DeckBuilder(props: DeckBuilderProps) {
     }
   });
 
+  const deckPageControlId = createUniqueId();
+
   return (
     <DeckBuilderContext.Provider
       value={{
@@ -100,7 +100,14 @@ export function DeckBuilder(props: DeckBuilderProps) {
           const rect = (e.target as HTMLElement).getBoundingClientRect();
           const containerRect = container.getBoundingClientRect();
           // 当点击事件发生在靠近左侧位置时，在鼠标右下角显示；否则在左上角显示
-          if (rect.left - containerRect.left < 320) {
+          if (e.type === "long-press") {
+            setCardDataViewerOffsetX((containerRect.width - 300) / 2);
+            if (containerRect.bottom - rect.bottom < 200) {
+              setCardDataViewerOffsetY(0);
+            } else {
+              setCardDataViewerOffsetY(rect.bottom - containerRect.top - 25);
+            }
+          } else if (rect.left - containerRect.left < 320) {
             setCardDataViewerOffsetX(
               rect.left + rect.width / 2 - containerRect.left,
             );
@@ -119,9 +126,18 @@ export function DeckBuilder(props: DeckBuilderProps) {
         },
       }}
     >
-      <div class={`gi-tcg-deck-builder groupxxx reset ${local.class}`} ref={container}>
+      <div
+        class={`gi-tcg-deck-builder @container groupxxx reset ${local.class}`}
+        ref={container}
+      >
+        <input
+          type="checkbox"
+          id={deckPageControlId}
+          class="deck-page-control"
+          hidden
+        />
         <div
-          class="w-full h-full flex flex-row group-[xxx.mobile]:flex-col items-stretch gap-3 select-none"
+          class="w-full h-full flex flex-col @3xl:flex-row items-stretch gap-0 @3xl:gap-3 select-none"
           {...rest}
           onClick={() => hide()}
         >
@@ -145,8 +161,15 @@ export function DeckBuilder(props: DeckBuilderProps) {
               )}
             </Match>
           </Switch>
-          <div class="b-r-1 b-b-1 b-gray" />
-          <div />
+          <div class="b-r-1 b-b-1 b-gray DP:mt-3 @3xl:mt-0 DP:@3xl:mt-0" />
+          <div class="h-3 w-full @3xl:hidden flex relative DP:mb-2 DP:flex-shrink-0">
+            <label
+              for={deckPageControlId}
+              class="absolute z-10 h-16 w-16 rounded-full b-1 b-white b-t-gray bg-white top-0 right-0 translate-y--15.5%"
+            >
+              <div class="absolute top-3 left-6 h-4 w-4 rounded-lt-1 b-t-3 b-l-3 b-yellow-5 rotate-45 DP:rotate-225 DP:top-2" />
+            </label>
+          </div>
           <Show when={deckData()}>
             {(deckData) => (
               <CurrentDeck

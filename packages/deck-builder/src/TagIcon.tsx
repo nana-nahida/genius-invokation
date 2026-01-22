@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import { createResource, Show } from "solid-js";
+import { createResource, Switch, Match } from "solid-js";
 import { useDeckBuilderContext } from "./DeckBuilder";
 
 export interface DiceIconProps {
@@ -56,33 +56,58 @@ export const NATION_TAG_IMG_NAME_MAP: Record<string, string> = {
   GCG_TAG_CAMP_HILICHURL: "Faction_Hili",
 };
 
+export const CARD_TAG_IMG_NAME_MAP: Record<string, string> = {
+  GCG_TAG_WEAPON: "Card_Weapon",
+  GCG_TAG_ARTIFACT: "Card_Relic",
+  GCG_TAG_TALENT: "Card_Talent",
+  GCG_TAG_VEHICLE: "Card_Vehicle",
+  GCG_TAG_LEGEND: "Card_Legend",
+  GCG_TAG_FOOD: "Card_Food",
+  GCG_TAG_RESONANCE: "Card_Sync",
+  GCG_TAG_PLACE: "Card_Location",
+  GCG_TAG_ALLY: "Card_Ally",
+  GCG_TAG_ITEM: "Card_Item",
+  GCG_TAG_CARD_BLESSING: "Card_Blessing",
+};
+
+export const CARD_TYPE_TEXT_MAP: Record<string, string> = {
+  GCG_CARD_MODIFY: "装备牌",
+  GCG_CARD_EVENT: "事件牌",
+  GCG_CARD_ASSIST: "支援牌",
+};
+
 const ALL_TAG_IMG_NAME_MAP: Record<string, string> = {
   ...ELEMENT_TAG_IMG_NAME_MAP,
   ...WEAPON_TAG_IMG_NAME_MAP,
   ...NATION_TAG_IMG_NAME_MAP,
+  ...CARD_TAG_IMG_NAME_MAP,
 };
 
 export function TagIcon(props: DiceIconProps) {
   const { assetsManager } = useDeckBuilderContext();
   return (
-    <Show
-      when={props.tagName.startsWith("GCG_TAG_ELEMENT_")}
+    <Switch
       fallback={
         <img
           src={`https://piovium.github.io/new-card-img-gen/assets/tags/UI_Gcg_Tag_${
             ALL_TAG_IMG_NAME_MAP[props.tagName]
           }.png`}
-          class="object-contain"
+          class="object-contain filter-invert"
         />
       }
     >
-      <img
-        src={assetsManager.getRawImageUrlSync(
-          "UI_Gcg_Buff_Common_" + ALL_TAG_IMG_NAME_MAP[props.tagName]
-        )}
-        draggable="false"
-        class="object-contain"
-      />
-    </Show>
+      <Match when={props.tagName.startsWith("GCG_TAG_ELEMENT_")}>
+        <img
+          src={assetsManager.getRawImageUrlSync(
+            "UI_Gcg_Buff_Common_" + ALL_TAG_IMG_NAME_MAP[props.tagName]
+          )}
+          draggable="false"
+          class="object-contain"
+        />
+      </Match>
+      <Match when={props.tagName.startsWith("GCG_CARD_")}>
+        <span class="text-gray-700 text-center text-nowrap">{CARD_TYPE_TEXT_MAP[props.tagName]}</span>
+      </Match>
+    </Switch>
   );
 }
