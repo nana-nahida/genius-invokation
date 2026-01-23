@@ -645,6 +645,7 @@ export class SkillContext<Meta extends ContextMetaBase> {
       kind: "immuneDefeated",
     });
     this.eventArg.markImmune();
+    return this.enableShortcut();
   }
 
   /** 增加最大生命值 */
