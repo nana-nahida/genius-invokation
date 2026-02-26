@@ -21,14 +21,19 @@
 通常用 `id` 来指代某一实体。由于对局状态是不可变的，我们不可能持有一个对象，它能“响应式”地跟踪到最新的对局状态变化。我们需要通过查找最新的 `GameState` 对象中对应 `id` 的 `EntityState`。工具函数 `getEntityById` 函数会实现这一操作（它的使用很频繁！）。
 
 实体有它所在的**区域**。区域是指实体所在的阵营（也就是位域哪方玩家一侧），以及它在棋盘上出现的“位置”。有如下实体区域：
-- 角色区：每个角色都是一个实体区域；角色本身位于这一实体区域，角色的装备和角色状态也位于这一实体区域；
-- 出战状态区：存放此阵营的出战状态；
-- 召唤物区：存放此阵营的召唤物；
-- 支援区：存放“支援牌”。
+- 场上区域（双方各有）：
+  - 角色区：每个角色都是一个实体区域；角色本身位于这一实体区域，角色的装备和角色状态也位于这一实体区域；
+  - 出战状态区：存放此阵营的出战状态；
+  - 召唤物区：存放此阵营的召唤物；
+  - 支援区：存放“支援牌”。
+- 场下区域（双方各有）：
+  - 手牌区：每张牌都是一个实体区域，包含卡牌本身和牌上附着的卡牌附着状态；
+  - 牌堆区：同上。
+- 墓碑区：被弃置但仍然可以响应部分事件的临时区域。
 
 在代码中，使用 `EntityArea` 类型表示实体区域。工具函数 `getEntityArea` 函数会实现这一操作。实体区域的作用最常见的作用在于实现卡牌描述中“所附着的角色、所装备的角色”的查找。
 
-所有实体（`EntityState` 以及表示角色的 `CharacterState`）包含如下属性：
+所有实体（`EntityState` 以及表示角色的 `CharacterState` 、表示卡牌附着状态的 `AttachmentState`）包含如下属性：
 
 - `id`；
 - `definition` 实体定义或角色定义，它通常不会改变。稍后展开。
@@ -38,7 +43,7 @@
 
 ## 实体定义
 
-`CharacterState` 和 `EntityState` 的 `definition` 属性为 `CharacterDefinition` 或 `EntityDefinition` 类型。这些类型给出了角色和实体的静态属性和行为。官方角色或实体的具体值由 `@gi-tcg/data` 导出 （其内部又通过 `@gi-tcg/core/builder` 定义的构建方法构建，参阅 [data](./data/README.md)）。
+`CharacterState` 、`EntityState` 、`AttachmentState` 分别具有对应的 `definition` 属性： `CharacterDefinition` 、`EntityDefinition` 和 `AttachmentDefinition` 类型。这些类型给出了角色/实体/卡牌附着状态的静态属性和行为。官方定义的具体值由 `@gi-tcg/data` 导出 （其内部又通过 `@gi-tcg/core/builder` 定义的构建方法构建，参阅 [data](./data/README.md)）。
 
 所有的实体定义类型包括如下属性：
 - `id` 定义 id，和官方基本保持一致；
@@ -69,9 +74,8 @@
 
 技能由 `SkillDefinition` 类型给出，包括如下属性：
 - `type` 固定为 `"skill"`；
-- `skillType`：
-  - 对于角色主动技能，为 `"normal"` `"elemental"` 或 `"burst"`。
-  - 对于卡牌描述，为 `"card"`。
+- `initiativeSkillConfig`：
+  - 对于角色主动技能、卡牌描述等，将其 `type` 指定为 `"normal"` `"elemental"` `"burst"` `"card"`，并指定默认的骰子需求、是否获得充能、是否默认快速、视为下落攻击等。
   - 否则（全部被动技能），为 `null`。
 - `triggerOn`：该技能要响应的事件名，主动技能为 `null`；
 - `filter`：函数，检查该技能是否可以执行，由卡牌描述给出；
@@ -101,7 +105,7 @@ interface SkillInfo {
   readonly caller: CharacterState | EntityState;
 
   // 若此技能是卡牌描述，则指向卡牌状态
-  readonly fromCard: CardState | null;
+  readonly fromCard: EntityState | null;
 
   // 此技能的定义
   readonly definition: SkillDefinition;

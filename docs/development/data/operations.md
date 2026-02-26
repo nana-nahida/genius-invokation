@@ -111,19 +111,19 @@ interface SkillContext {
   createPileCards(card: CardHandle, count: number, strategy: InsertPileStrategy): void;
 
   // 弃置行动牌
-  disposeCard(...cards: CardState[]): void;
+  disposeCard(...cards: EntityState[]): void;
 
   // 从牌堆抽取手牌
   // opt.who 决定哪一方抽牌
   // opt.withTag 要求抽出的手牌必须带有的标签
   drawCards(count: number, opt: DrawCardsOpt): void;
-  drawCards(...cards: CardState[]): void;
+  drawCards(...cards: EntityState[]): void;
 
   // 将牌从手牌放回牌堆
-  undrawCards(cards: CardState[], strategy: InsertPileStrategy): void;
+  undrawCards(cards: EntityState[], strategy: InsertPileStrategy): void;
 
   // 从对手的手牌中窃取一张牌到我方手牌
-  stealHandCard(card: CardState): void;
+  stealHandCard(card: EntityState): void;
 
   // 终止预览。当此行动在预览语境下时，终止后续的预览计算。
   // 在非预览语境下是空操作。
@@ -169,7 +169,7 @@ interface SkillContext {
   absorbDice(strategy: "seq" | "diff", count: number): DiceType[];
 
   // 弃置我方原本元素骰费用最多的 count 张牌
-  disposeMaxCostHands(count = 1, opt = {}): CardState[];
+  disposeMaxCostHands(count = 1, opt = {}): EntityState[];
 }
 ```
 
@@ -218,10 +218,10 @@ interface SkillContext {
   randomSubset<T>(items: readonly T[], count: number): T[];
 
   // 获取我方或对方原本元素骰费用最多的手牌列表
-  getMaxCostHands(who: "my" | "opp" = "my"): CardState[];
+  getMaxCostHands(who: "my" | "opp" = "my"): EntityState[];
 
   // 是否是我方初始牌组的卡牌
-  isInInitialPile(card: CardState): boolean;
+  isInInitialPile(card: EntityState): boolean;
 }
 ```
 

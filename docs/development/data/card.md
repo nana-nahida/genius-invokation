@@ -7,7 +7,6 @@
 - `.since("v3.3.0")` 引入次卡时的[游戏版本](./version.md)
 - `.costXxx` 可指定卡牌所消耗的骰子。
 - `.legend()` 秘传牌。
-- `.requireCharacterTag` 指定“牌组至少包含两个 xx 角色”。
 - `.tags` 指定标签，如 `action` 为战斗行动。
 - `.addTarget` 增加一个卡牌使用目标，可行目标由[实体查询语法](../query.md)给出。
 - `.filter` 设置打出条件；只有条件满足时才能打出。
@@ -37,7 +36,6 @@ const PlungingStrike = card(332017)
 const ElementalResonanceShatteringIce = card(331102)
   .costCryo(1)
   .tags("resonance")
-  .requireCharacterTag("cryo")
   .toStatus("my active")
   .duration(1)
   .once("increaseSkillDamage")

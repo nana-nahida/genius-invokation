@@ -78,7 +78,6 @@ const BrokenRimesEcho = card(312101)
 /** 岩与契约 */
 const StoneAndContracts = card(331802)
   .costVoid(3)
-  .requireCharacterTag("liyue")
   .toCombatStatus()
   .once("actionPhase")   // 下回合开始阶段
   .generateDice(DiceType.Omni, 3)
