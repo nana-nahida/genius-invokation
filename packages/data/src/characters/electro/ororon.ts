@@ -114,7 +114,7 @@ export const NightshadeSynesthesia = skill(14164)
     (c.self.hasNightsoulsBlessing()?.variables.nightsoul ?? 0) >= 2)
   .listenToPlayer()
   .consumeNightsoul("@self", 2)
-  .damage(DamageType.Electro, 1)
+  .damage(DamageType.Electro, 1, "opp characters with health > 0 limit 1")
   .on("dealDamage", (c, e) => 
     ([DamageType.Electro, DamageType.Hydro] as DamageType[]).includes(e.type) &&
     Math.floor(e.via.definition.id) !== Math.floor(c.skillInfo.definition.id))
