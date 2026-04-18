@@ -109,8 +109,6 @@ import { $, runQuery, toExpression, type QueryFn } from "./query";
 import type { IQuery } from "./query/utils";
 import {
   runWithAsyncContext,
-  setAsyncContext,
-  type GiTcgAsyncContext,
 } from "./async_context";
 
 export interface DeckConfig extends Deck {
@@ -400,7 +398,7 @@ export class Game {
       action: this.actionPhase,
       end: this.endPhase,
     };
-    await runWithAsyncContext(
+    runWithAsyncContext(
       {
         gameLogger: this.logger,
       },
