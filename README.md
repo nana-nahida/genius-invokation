@@ -42,3 +42,5 @@
 ## [关于开发](./docs/development/README.md)
 
 上述链接可查看（可能是过时的）开发文档和注记。
+
+If you are interested in our project or want to have more information, welcome to join our [Discord server](https://discord.gg/vGjh6XAKqk).
