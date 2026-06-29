@@ -214,6 +214,14 @@ export class EntityModel implements ICaller {
     }
   }
 
+  setVariable(name: string, initValue: number, option: GtsVariableOptions) {
+    const varConfig = createVariableConfig(initValue, option);
+    this.varConfigs.set(name, varConfig);
+    if (option.visible !== false) {
+      this.visibleVarName = name;
+    }
+  }
+
   setUsage(count: number, option: GtsUsageOrUsagePerRoundOptions): string {
     const perRound = option.perRound ?? false;
     let name: string;
@@ -254,6 +262,7 @@ export class EntityModel implements ICaller {
       }
       this.disposeWhenUsageIsZero = true;
     }
+    this.setVariable(name, count, option);
     return name;
   }
 }
@@ -374,7 +383,7 @@ export const EntityViewModel = defineViewModel(
     tags: h.simpleAttribute()(function (...tags: EntityTag[]) {
       this.tags.push(...tags);
     }),
-    
+
     prepare: h.attribute<{
       <Meta extends EntityVMMeta>(
         this: ThisWithType<Meta, "status">,
@@ -383,7 +392,7 @@ export const EntityViewModel = defineViewModel(
     }>((model, [skill], subView) => {
       const options = PrepareVM.parse(subView);
       if (typeof options.hintCount === "number") {
-        model.varConfigs.set("hintCount", createVariable(options.hintCount));
+        model.setVariable("hintCount", options.hintCount, { visible: false });
       }
       model.tags.push("preparingSkill");
       const replaceSkillModel = new TriggeredSkillModel(
@@ -429,7 +438,6 @@ export const EntityViewModel = defineViewModel(
     }>((model, [name, initValue], subView) => {
       const options = VariablesVM.parse(subView);
       const varConfig = createVariableConfig(initValue, options);
-      model.varConfigs.set(name, varConfig);
     }),
     usage: h.attribute<{
       <Meta extends EntityVMMeta>(
@@ -451,8 +459,7 @@ export const EntityViewModel = defineViewModel(
     }>((model, [count], subView) => {
       const options = NightsoulVM.parse(subView);
       model.tags.push("nightsoulsBlessing");
-      const varConfig = createVariableConfig(count, options);
-      model.varConfigs.set("nightsoul", varConfig);
+      model.setVariable("nightsouls", count, options);
       if (options.autoDispose) {
         const disposeSkillModel = new TriggeredSkillModel(
           model,
@@ -476,10 +483,9 @@ export const EntityViewModel = defineViewModel(
         max?: number,
       ): AR.DoneRewriteMeta<PushVar<Meta, "shield">>;
     }>((model, [count, max = count]) => {
-      const varConfig = createVariableConfig(count, {
+      model.setVariable("shield", count, {
         append: { limit: max },
       });
-      model.varConfigs.set("shield", varConfig);
       const decreaseDmgSkill = new TriggeredSkillModel(
         model,
         "decreaseDamaged",
@@ -514,8 +520,7 @@ export const EntityViewModel = defineViewModel(
       ): AR.WithRewriteMeta<PushVar<Meta, "duration">, typeof VariablesVM>;
     }>((model, [value], subView) => {
       const options = VariablesVM.parse(subView);
-      const varConfig = createVariableConfig(value, options);
-      model.varConfigs.set("duration", varConfig);
+      model.setVariable("duration", value, options);
     }),
     oneDuration: h.attribute<{
       <Meta extends EntityVMMeta>(
@@ -528,11 +533,10 @@ export const EntityViewModel = defineViewModel(
       >;
     }>((model, [], subView) => {
       const options = VariablesVM.parse(subView);
-      const varConfig = createVariableConfig(1, {
+      model.setVariable("duration", 1, {
         ...options,
         visible: false,
       });
-      model.varConfigs.set("duration", varConfig);
     }),
 
     replaceDescription: h.attribute<{
@@ -586,10 +590,7 @@ export const EntityViewModel = defineViewModel(
         };
         model.skillList.push(onDmgSkill.buildSkillDefinition());
       }
-      model.varConfigs.set(
-        "hintCount",
-        createVariableConfig(icon, { visible: false }),
-      );
+      model.setVariable("hintIcon", icon, { visible: false });
       if (typeof text === "function") {
         const hintReplacement = "[GCG_TOKEN_HINT_TEXT]";
         model.hintText = `\${${hintReplacement}}`;

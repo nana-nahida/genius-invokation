@@ -32,6 +32,10 @@ export const GtsVariableOptions = type({
    * 指定 `append` 时此选项无效。
    */
   "forceOverwrite?": "boolean",
+  /**
+   * 是否声明为可见变量。
+   * @default true
+   */
   "visible?": "boolean",
 });
 export type GtsVariableOptions = TypeInfer<typeof GtsVariableOptions>;
