@@ -246,6 +246,11 @@ export class SkillContext<Meta extends ContextMetaBase> {
     return this._self.area;
   }
 
+  // GTS support
+  public get e() {
+    return this.eventArg;
+  }
+
   /**
    *
    * @param state 触发此技能之前的游戏状态
@@ -528,7 +533,7 @@ export class SkillContext<Meta extends ContextMetaBase> {
   queryAll<const Q extends IQuery>(
     arg: (($: IDollar) => Q) | Q,
   ): RxEntityState<Meta, InferResult<Q>["type"]>[] {
-    if (typeof arg === "function") {
+    if (!(toExpression in arg)) {
       arg = arg($);
     }
     return runQuery(this.rawState, this.callerArea.who, arg).map((state) =>
@@ -871,7 +876,9 @@ export class SkillContext<Meta extends ContextMetaBase> {
       const target = t.latest();
       using l = this.mutator.subLog(
         DetailLogType.Primitive,
-        `Increase ${value} max health to ${stringifyState(target)} ${heal ? "and heal" : ""}`,
+        `Increase ${value} max health to ${stringifyState(target)} ${
+          heal ? "and heal" : ""
+        }`,
       );
       this.mutate({
         type: "modifyEntityVar",

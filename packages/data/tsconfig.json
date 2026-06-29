@@ -5,9 +5,10 @@
     "module": "ES2022",
     "moduleResolution": "Bundler",
     "lib": ["ESNext"],
-    "customConditions": ["development"],
 
-    "rewriteRelativeImportExtensions": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "allowImportingTsExtensions": true,
     "erasableSyntaxOnly": true,
     "verbatimModuleSyntax": true,
     "forceConsistentCasingInFileNames": true,

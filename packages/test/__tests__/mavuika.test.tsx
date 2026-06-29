@@ -14,15 +14,15 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import { ref, setup, Character, State, Equipment, Card, $ } from "#test";
-import { LumenstoneAdjuvant } from "@gi-tcg/data/internal/cards/support/item";
-import { ScionsOfTheCanopy } from "@gi-tcg/data/internal/cards/support/place";
-import { FlamestriderBlazingTrail, Mavuika, TheNamedMoment } from "@gi-tcg/data/internal/characters/pyro/mavuika";
+import { LumenstoneAdjuvant } from "@gi-tcg/data/internal/cards/support/item.gts";
+import { ScionsOfTheCanopy } from "@gi-tcg/data/internal/cards/support/place.gts";
+import { FlamestriderBlazingTrail, Mavuika, TheNamedMoment } from "@gi-tcg/data/internal/characters/pyro/mavuika.gts";
 import { expect, test } from "vitest";
 
 test("mavuika: play 'E' card trigger ScionsOfTheCanopy", async () => {
   const mavuika = ref();
   const c = setup(
-    <State dataVersion="v5.7.0">
+    <State>
       <Character my active def={Mavuika} ref={mavuika} />
       <Card my def={ScionsOfTheCanopy} />
     </State>,
@@ -36,6 +36,6 @@ test("mavuika: play 'E' card trigger ScionsOfTheCanopy", async () => {
   c.expect($.my.support.def(ScionsOfTheCanopy)).toHaveVariable({
     point: 2,
   });
-  // 8 - 2(火神E) - 2(涉渡) + 1(悬木人生成) = 5
-  expect(c.state.players[0].dice).toBeArrayOfSize(5);
+  // 8 - 3(火神E) - 2(涉渡) + 1(悬木人生成) = 4
+  expect(c.state.players[0].dice).toBeArrayOfSize(4);
 });

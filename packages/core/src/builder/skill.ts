@@ -91,6 +91,7 @@ import type { TargetKindOfQuery, TargetQuery, TargetType } from "./card";
 import { $, type IDollar, type InferResult, type IQuery } from "../query";
 import { isCustomEvent, type CustomEvent } from "../base/custom_event";
 import type { ApplyReactive } from "./context/reactive";
+import type { StaticAssert } from "../query/utils";
 
 export type InitiativeSkillTargetKind = readonly (
   | "character"
@@ -181,12 +182,14 @@ export type StrictInitiativeSkillFilter<
   InitiativeSkillBuilderMeta<CallerType, KindTs, AssociatedExt>
 >;
 
-export enum ListenTo {
-  Myself,
-  SameArea,
-  SamePlayer,
-  All,
-}
+/** @deprecated use string literal instead */
+export const ListenTo = {
+  Myself: "myself",
+  SameArea: "sameArea",
+  SamePlayer: "samePlayer",
+  All: "all",
+} as const;
+export type ListenTo = (typeof ListenTo)[keyof typeof ListenTo];
 
 interface RelativeArg {
   callerId: number;
@@ -509,6 +512,13 @@ export const detailedEventDictionary = {
       checkRelative(e.onTimeState, { who: e.who }, r) && area.who === e.who
     );
   }),
+  // 自身加入手牌后
+  selfHandCardInserted: defineDescriptor(
+    "onHandCardInserted",
+    (e, r, curState) => {
+      return r.callerId === e.card.id && r.callerArea.type !== "pile";
+    },
+  ),
   disposeCard: defineDescriptor("onDispose", (e, r) => {
     return e.isDiscard() && checkRelative(e.onTimeState, { who: e.who }, r);
   }),
@@ -516,6 +526,10 @@ export const detailedEventDictionary = {
     return (
       e.isDiscardOrTuning() && checkRelative(e.onTimeState, { who: e.who }, r)
     );
+  }),
+  // 自身（在牌库或手牌中）舍弃时
+  selfDiscard: defineDescriptor("onDispose", (e, r) => {
+    return r.callerId === e.entity.id && e.isDiscard();
   }),
   dealDamage: defineDescriptor("onDamageOrHeal", (e, r) => {
     return (
@@ -770,7 +784,7 @@ type EnableShortcutPropsOf<Ctx extends object> = {
 }[keyof Ctx];
 
 /** 所有允许 shortcut 调用的方法名 */
-type EnabledShortcutProps = EnableShortcutPropsOf<
+type EnabledShortcutPropsRaw = EnableShortcutPropsOf<
   TypedSkillContext<{
     readonly: false;
     eventArgType: unknown;
@@ -780,6 +794,61 @@ type EnabledShortcutProps = EnableShortcutPropsOf<
     shortcutReceiver: {};
   }>
 >;
+// Temporary migration workaround of GTS:
+// TSServer inside GTS cannot correctly compue the type of `EnabledShortcutPropsRaw`.
+// So we manually list all the allowed shortcut methods here.
+type EnabledShortcutProps =
+  | "emitCustomEvent"
+  | "abortPreview"
+  | "switchActive"
+  | "gainEnergy"
+  | "heal"
+  | "immune"
+  | "increaseMaxHealth"
+  | "damage"
+  | "apply"
+  | "cleanAura"
+  | "moveEntity"
+  | "summon"
+  | "characterStatus"
+  | "equip"
+  | "combatStatus"
+  | "attach"
+  | "attachCostIncrease"
+  | "attachCostReduction"
+  | "dispose"
+  | "setVariable"
+  | "addVariable"
+  | "addVariableWithMax"
+  | "consumeUsage"
+  | "consumeUsagePerRound"
+  | "transformDefinition"
+  | "swapCharacterPosition"
+  | "convertDice"
+  | "generateDice"
+  | "createHandCard"
+  | "drawCards"
+  | "createPileCards"
+  | "undrawCards"
+  | "swapPlayerHandCards"
+  | "disposeMaxCostHands"
+  | "consumeNightsoul"
+  | "gainNightsoul"
+  | "continueNextTurn"
+  | "setExtensionState"
+  | "switchCards"
+  | "rerollDice"
+  | "triggerEndPhaseSkill"
+  | "useSkill"
+  | "selectAndSummon"
+  | "selectAndCreateHandCard"
+  | "selectAndPlay"
+  | "adventure"
+  | "finishAdventure";
+type EnabledShortcutPropsCheck = StaticAssert<
+  IsNever<Exclude<EnabledShortcutPropsRaw, EnabledShortcutProps>>
+>;
+type IsNever<T> = [T] extends [never] ? true : false;
 
 type ShortcutSkillContext<Meta extends ContextMetaBase> = Pick<
   TypedSkillContext<Meta>,

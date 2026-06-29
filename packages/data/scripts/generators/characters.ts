@@ -24,13 +24,10 @@ import {
 import { snakeCase } from "case-anything";
 import { writeSourceCode, SourceInfo, identifier } from "./source";
 import { getCostCode, inlineCostDescription } from "./cost";
-import { getCardCode, getCardTypeAndTags } from "./cards";
+import { getCardCode, getCardTypeAndTags, TODO_LINE } from "./cards";
 import { NEW_VERSION } from "./config";
 
 interface AuxiliaryFound {
-  hasSummon: boolean;
-  hasStatuses: boolean;
-  hasCombatStatuses: boolean;
   items: SourceInfo[];
 }
 
@@ -107,18 +104,14 @@ function getAuxiliaryOfCharacter(id: number): AuxiliaryFound {
       id: obj.id,
       name: obj.name,
       description: description,
-      code: `export const ${identifier(obj.englishName)} = ${obj.kind}(${
-        obj.id
-      })
-  .since("${NEW_VERSION}")
+      code: `define ${obj.kind} {
+  id ${obj.id} as ${identifier(obj.englishName)};
+  since "${NEW_VERSION}";
   // TODO
-  .done();`,
+}`,
     };
   });
   return {
-    hasSummon: mySummons.length > 0,
-    hasStatuses: myStatuses.length > 0,
-    hasCombatStatuses: myCombatStatuses.length > 0,
     items,
   };
 }
@@ -138,7 +131,10 @@ function getTalentCard(id: number, name: string): SourceInfo[] {
       id: card.id,
       name: card.name,
       description: card.description,
-      code: getCardCode(card, `\n  .${methodName}(${identifier(name)})`),
+      code: getCardCode(
+        card,
+        `\n  ${methodName} ${identifier(name)} {\n    ${TODO_LINE}  }`,
+      ),
     },
   ];
 }
@@ -149,21 +145,14 @@ export async function generateCharacters() {
       "characters/" +
       ch.tags[0].split("_").pop()!.toLowerCase() +
       "/" +
-      snakeCase(ch.englishName) +
-      ".ts";
+      snakeCase(ch.englishName);
 
-    const { hasSummon, hasStatuses, hasCombatStatuses, items } =
+    const { items } =
       getAuxiliaryOfCharacter(ch.id);
-    const importDecls = ["character", "skill"];
-    if (hasSummon) importDecls.push("summon");
-    if (hasStatuses) importDecls.push("status");
-    if (hasCombatStatuses) importDecls.push("combatStatus");
-    const initCode = `import { ${importDecls.join(
-      ", ",
-    )}, card, DamageType, $ } from "@gi-tcg/core/builder";\n`;
+    const initCode = `import { DiceType, DamageType, $ } from "@gi-tcg/core/builder";\n`;
     const skills = ch.skills;
 
-    items.push(
+    const todoLine = items.push(
       ...skills.map<SourceInfo>((sk) => {
         const TYPE_MAP: Record<string, string> = {
           GCG_SKILL_TAG_A: "normal",
@@ -175,10 +164,15 @@ export async function generateCharacters() {
           id: sk.id,
           name: sk.name,
           description: sk.description,
-          code: `export const ${identifier(sk.englishName)} = skill(${sk.id})
-  .type("${TYPE_MAP[sk.type]}")${getCostCode(sk.playCost)}
-  // TODO
-  .done();`,
+          code: `define skill {
+  id ${sk.id} as ${identifier(sk.englishName)};
+  skillType ${TYPE_MAP[sk.type]}${
+    TYPE_MAP[sk.type] === "passive"
+      ? ` {\n    ${TODO_LINE}  }`
+      : `${getCostCode(sk.playCost)}
+  ${TODO_LINE}`
+  }
+}`,
         };
       }),
     );
@@ -186,20 +180,20 @@ export async function generateCharacters() {
     const tagCode = ch.tags
       .map((t) => t.split("_").pop()!.toLowerCase())
       .filter((s) => s !== "none")
-      .map((s) => `"${s}"`)
       .join(", ");
 
     items.push({
       id: ch.id,
       name: ch.name,
       description: ch.storyText ?? "",
-      code: `export const ${identifier(ch.englishName)} = character(${ch.id})
-  .since("${NEW_VERSION}")
-  .tags(${tagCode})
-  .health(${ch.hp})
-  .energy(${ch.maxEnergy})
-  .skills(${skills.map((sk) => identifier(sk.englishName)).join(", ")})
-  .done();`,
+      code: `define character {
+  id ${ch.id} as ${identifier(ch.englishName)};
+  since "${NEW_VERSION}";
+  tags ${tagCode};
+  health ${ch.hp};
+  energy ${ch.maxEnergy};
+  skills ${skills.map((sk) => identifier(sk.englishName)).join(", ")};
+}`,
     });
     items.push(...getTalentCard(ch.id, ch.englishName));
 

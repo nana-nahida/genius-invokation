@@ -19,18 +19,18 @@ import { writeFile } from "node:fs/promises";
 import { BASE_PATH, LICENSE } from "./config";
 
 const TARGET = path.join(BASE_PATH, "index.ts");
-const GLOB = path.join(BASE_PATH, "**/*.ts");
+const GLOB = path.join(BASE_PATH, "**/*.{ts,gts}");
 
 export async function generateImports() {
   const files = (
     await glob(GLOB, {
-      ignore: `${BASE_PATH}/*.ts`,
+      ignore: `${BASE_PATH}/*.{ts,gts}`,
       windowsPathsNoEscape: true,
     })
   ).toSorted();
 
   function pathToImport(path: string) {
-    return path.replace(new RegExp("^" + BASE_PATH, "g"), ".");
+    return path.replace(/\\/g, "/").replace(new RegExp("^" + BASE_PATH, "g"), ".");
   }
 
   const imports = files.map((f) => `import "${pathToImport(f)}";`).join("\n");
@@ -42,7 +42,7 @@ export async function generateImports() {
 
 import "./begin.ts";
 
-import "./commons.ts";
+import "./commons.gts";
 ${imports}
 
 export * from "./end.ts";
