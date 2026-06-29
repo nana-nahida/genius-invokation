@@ -437,7 +437,7 @@ export const EntityViewModel = defineViewModel(
       ): AR.WithRewriteMeta<PushVar<Meta, Name>, typeof VariablesVM>;
     }>((model, [name, initValue], subView) => {
       const options = VariablesVM.parse(subView);
-      const varConfig = createVariableConfig(initValue, options);
+      model.setVariable(name, initValue, options);
     }),
     usage: h.attribute<{
       <Meta extends EntityVMMeta>(
