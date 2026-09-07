@@ -330,15 +330,20 @@ class PrimaryMethodsImpl<Meta extends HeterogeneousMetaBase> {
     name: Name,
     value: number,
   ): AssignVar<Meta, Name>;
-  var<const Name extends VarNameFromMeta<Meta>>(
+  var<const Name extends VarNameFromMeta<Meta>, const Op extends RelationOp>(
     name: Name,
-    op: RelationOp,
+    op: Op,
     value: number,
-  ): AssignVar<Meta, Name>;
+  ): AssignVar<Meta, "!=" extends Op ? never : Name>;
   var<
     const Name extends VarNameFromMeta<Meta>,
+    const Op extends RelationOp,
     const Name2 extends VarNameFromMeta<Meta>,
-  >(name: Name, op: RelationOp, ref: Name2): AssignVar<Meta, Name | Name2>;
+  >(
+    name: Name,
+    op: Op,
+    ref: Name2,
+  ): AssignVar<Meta, "!=" extends Op ? never : Name | Name2>;
   var<const Name extends VarNameFromMeta<Meta>>(
     name: Name,
     pred: (value: number) => unknown,
@@ -371,7 +376,10 @@ class PrimaryMethodsImpl<Meta extends HeterogeneousMetaBase> {
       } else if (typeof opOrValue === "function") {
         const fnCode = stringifyFunction(opOrValue);
         const prop = escapeUnsafeChars(variableKeyToPropertyCode(name));
-        const wrappedSource = `(v) => (${fnCode})(v[${prop}])`;
+        const wrappedSource = `(v) => {
+          const value = Number(v[${prop}]);
+          return value === value && (${fnCode})(value);
+        }`;
         this._internal.addConstraint(["variables", ["fn", wrappedSource]]);
       } else {
         const _exhaustiveCheck: never = opOrValue!;
@@ -386,14 +394,14 @@ class PrimaryMethodsImpl<Meta extends HeterogeneousMetaBase> {
   }
 
   cost(value: number): AssignVarAndActionCard<Meta, typeof diceCostKey>;
-  cost(
-    op: RelationOp,
+  cost<const Op extends RelationOp>(
+    op: Op,
     value: number,
-  ): AssignVarAndActionCard<Meta, typeof diceCostKey>;
+  ): AssignVarAndActionCard<Meta, "!=" extends Op ? never : typeof diceCostKey>;
   cost(
     pred: (value: number) => unknown,
   ): AssignVarAndActionCard<Meta, typeof diceCostKey>;
-  cost(...args: any[]) {
+  cost(...args: any[]): any {
     // @ts-expect-error - overloads are not properly inferred here
     return this.var(diceCostKey, ...args);
   }
