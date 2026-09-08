@@ -51,14 +51,19 @@ define summon {
 
 `usage perRound, <数量>;` 限制每回合次数；默认同样在执行后扣除并在回合开始时重置。需要为多个每回合次数命名时，在选项块内使用 `name "usagePerRound1";`。
 
-普通变量使用 `variable <名称>, <初值>;`。重复创建时，`{ append; }` 允许累加，`{ append <上限>; }` 指定叠加上限；`{ forceOverwrite; }` 则指定重新入场时需重置为初始值。
+普通变量使用 `variable <名称>, <初值>;`。
+- 重复创建时：`{ append; }` 允许累加；`{ forceOverwrite; }` 要求重新设置为初值；否则执行常规逻辑：取当前值和初始值的最大值。
+- 指定取值范围：`{ range <上限>; }` 将变量取值限制在 `[0, 上限]`，该限制适用于 `setVariable`、 `addVariable` 和重复入场的叠加值。
 
 ```gts
 define status {
   id 112091 as BreakthroughStatus;
-  variable "break", 1 { append 3; };
+  variable "break", 1 {
+    append;
+    range 3;
+  };
   on endPhase {
-    :addVariableWithMax("break", 1, 3);
+    :addVariable("break", 1);
   };
 };
 ```
@@ -86,9 +91,9 @@ define combatStatus {
 ```gts
 define status {
   id 127011 as RadicalVitalityStatus;
-  variable vitality, 0;
+  variable vitality, 0 { range 3; };
   defineSnippet addVitality {
-    :addVariableWithMax("vitality", 1, 3);
+    :addVariable("vitality", 1);
   };
   on dealDamage {
     :callSnippet.addVitality();
