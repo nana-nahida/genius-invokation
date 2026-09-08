@@ -307,11 +307,16 @@ class Player implements PlayerIOWithError {
   }
 
   notify(notification: Notification) {
-    this.notificationSseSource.next({
-      type: "notification",
-      data: base64Encode(PbNotification.encode(notification).finish()),
-    });
-    this._mutationExtraTimeout += 0.5 * notification.mutation.length;
+    try {
+      this.notificationSseSource.next({
+        type: "notification",
+        data: base64Encode(PbNotification.encode(notification).finish()),
+      });
+      this._mutationExtraTimeout += 0.5 * notification.mutation.length;
+    } catch (e) {
+      console.error(e);
+      console.error(JSON.stringify(notification));
+    }
   }
   sendOppRpc(oppTimer: RpcTimer | null) {
     this.oppRpcSubject.next({
