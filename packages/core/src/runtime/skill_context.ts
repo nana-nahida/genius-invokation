@@ -1481,14 +1481,6 @@ export class SkillContext<Meta extends ContextMetaBase> {
       } (diff: ${info.diffValue}, direction: ${info.direction})`,
     );
 
-    const MAX_VALUE = 2 ** 31 - 1; // 2147483647
-    if (info.newValue > MAX_VALUE) {
-      this.mutator.log(
-        DetailLogType.Other,
-        `Variable value ${info.newValue} exceeds max limit, omitted`,
-      );
-      return;
-    }
     let state = this.get(target).latest();
     if (VARIABLE_NAME_CAN_EMIT_EVENTS.includes(info.varName)) {
       const modifyEventArg = new BeforeVariableEventArg(
