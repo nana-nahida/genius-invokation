@@ -2046,7 +2046,7 @@ define card {
   since "v5.0.0";
   addTarget $.my.character.has($.equipped.tag("technique"));
   const technique = :e.targets[0].hasTechnique();
-  if (technique) {
+  if (technique && technique.definition.varConfigs.usage) {
     :addVariable("usage", 1, technique);
   }
 };
