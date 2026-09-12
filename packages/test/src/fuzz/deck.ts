@@ -61,8 +61,12 @@ const SINGLETON_TAGS = ["legend", "blessing"];
 
 const poolCache = new Map<Version, CardPool>();
 
-/** 每个进程最多缓存的版本数；`--version random` 时避免 30+ 份 GameData 常驻内存 */
-const MAX_CACHED_VERSIONS = 4;
+/**
+ * 每个进程缓存的版本数。实测把全部 34 个版本的 `GameData` 同时留在内存里只多占
+ * 约 3 MB（老版本与当前版本共享绝大多数定义对象），而缓存太小会让 `--version random`
+ * 下近九成用例重新 `getData()` 并重建 cardPool，因此直接全量缓存。
+ */
+const MAX_CACHED_VERSIONS = 64;
 const dataCache = new Map<Version | undefined, GameData>();
 export function getDataCached(version?: Version): GameData {
   let data = dataCache.get(version);

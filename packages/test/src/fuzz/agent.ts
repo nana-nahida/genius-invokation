@@ -53,7 +53,9 @@ export interface Agent {
 
 export type StrategyName = "weighted" | "random";
 
-const WEIGHTS: Record<StrategyName, Record<string, number>> = {
+export type ActionWeights = Readonly<Record<string, number>>;
+
+const BASE_WEIGHTS: Record<StrategyName, ActionWeights> = {
   weighted: {
     useSkill: 6,
     playCard: 4,
@@ -64,12 +66,47 @@ const WEIGHTS: Record<StrategyName, Record<string, number>> = {
   random: {},
 };
 
-export function actionWeight(strategy: StrategyName, action: Action): number {
-  const kind = action.action?.$case ?? "";
-  return WEIGHTS[strategy][kind] ?? 1;
+const JITTERED_KINDS = [
+  "useSkill",
+  "playCard",
+  "switchActive",
+  "elementalTuning",
+  "declareEnd",
+] as const;
+
+/**
+ * 每局（每个玩家各一组）从种子派生动作权重：以 `BASE_WEIGHTS` 为中位数，
+ * 在 `[1/jitter, jitter]` 倍之间按对数均匀抖动。
+ *
+ * 固定权重下 `declareEnd` 恒为 0.3，几乎没有对局会主动结束回合，对局基本都靠
+ * `--max-rounds` 截断，回合结束阶段的结算路径（召唤物到期、"结束时"触发器）
+ * 因此覆盖不足；抖动后既有速攻局也有长考局，双方策略还可能不对称。
+ *
+ * `jitter <= 1` 或 `random` 策略退化为原来的固定权重。
+ */
+export function resolveWeights(
+  strategy: StrategyName,
+  rng: Prng,
+  jitter: number,
+): ActionWeights {
+  const base = BASE_WEIGHTS[strategy];
+  if (strategy === "random" || !(jitter > 1)) {
+    return base;
+  }
+  const logJitter = Math.log(jitter);
+  const out: Record<string, number> = {};
+  for (const kind of JITTERED_KINDS) {
+    out[kind] = (base[kind] ?? 1) * Math.exp((rng.float() * 2 - 1) * logJitter);
+  }
+  return out;
 }
 
-export function createLegalAgent(strategy: StrategyName): Agent {
+export function actionWeight(weights: ActionWeights, action: Action): number {
+  const kind = action.action?.$case ?? "";
+  return weights[kind] ?? 1;
+}
+
+export function createLegalAgent(weights: ActionWeights): Agent {
   return {
     rerollDice(ctx) {
       const dice = ctx.game.state.players[ctx.who].dice;
@@ -97,7 +134,7 @@ export function createLegalAgent(strategy: StrategyName): Agent {
         throw new Error("No VALID action offered by the engine");
       }
       const { action, index } = ctx.rng.pickWeighted(valid, (v) =>
-        actionWeight(strategy, v.action),
+        actionWeight(weights, v.action),
       );
       return { chosenActionIndex: index, usedDice: action.autoSelectedDice };
     },

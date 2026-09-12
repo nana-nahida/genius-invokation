@@ -40,12 +40,14 @@ fuzz repro <case.json>     按 case.json 里的 (种子, 序号, 选项) 重跑�
 --mode <m>          game | scenario | protocol | all（默认 game；all 按序号轮换三种模式）
 --version <v>       current | random | v6.7.0 等（默认 current；random 在全部官方版本间抽取）
 --strategy <s>      weighted | random（默认 weighted：技能 6 / 打牌 4 / 切人 2 / 调和 1 / 结束 0.3）
+--strategy-jitter <f>       每局动作权重的抖动倍率（默认 5；1 = 固定权重）
 --dice <d>          random | omni | real（默认 random：每局随机决定是否 alwaysOmni）
 --deck-shape <s>    official | small | chaos（默认 official：3 角色 + 30 张，≤2 张同名，秘传/祝福 ≤1）
 --max-rounds <n>    每局最大回合数（默认 15）
 --timeout-ms <n>    单局超时（默认 120000）
 --max-rpcs <n>      单局 rpc 上限，超过则 giveUp（默认 2000）
 --strict-dice       unexpectedInsufficientDice = "throw"（把骰子被级联消耗的软警告变成硬错误）
+--max-artifacts-per-key <n> 同一错误键最多落盘几份完整产物（默认 5，按分片计；0 = 不限）
 --malice-p <p>      协议模式每次 rpc 注入非法响应的概率（默认 0.15）
 --relatedness <p>   场景模式抽取"角色相关"实体的概率（默认 0.7）
 --out <dir>         产物目录
@@ -63,6 +65,12 @@ fuzz repro <case.json>     按 case.json 里的 (种子, 序号, 选项) 重跑�
 
 合法随机玩家只在引擎标记为 `VALID` 的候选行动中选择，并原样使用 `autoSelectedDice` 支付，
 因此合法策略下出现的 `GiTcgIoError` 意味着"引擎宣称合法却又拒绝"，同样记为失败（`io-error`）。
+
+`weighted` 的权重不是全局常量：每局为双方各派生一组，以上面那组数值为中位数，在
+`[1/jitter, jitter]` 倍之间按对数均匀抖动（`--strategy-jitter`，默认 5）。固定权重下
+`declareEnd` 恒为 0.3，几乎没有对局会主动结束回合，对局基本都被 `--max-rounds` 截断，
+回合结束阶段的结算路径覆盖不足；抖动后既有速攻局也有长考局，双方策略还可能不对称。
+权重由种子派生，因此仍然可复现，并写在失败报告的"对局设定"里。
 
 牌组合法性离线从 `GameData` 推导：可入牌组的卡 = type ∈ {eventCard, equipment, support} 且
 （`obtainable` 或带 talent/adventureSpot/blessing/technique 标签）；天赋牌按 id 约定
@@ -122,6 +130,13 @@ fuzz repro <case.json>     按 case.json 里的 (种子, 序号, 选项) 重跑�
 
 所有随机性来自 `prng.ts`（mulberry32），每个用例的种子由 `(campaignSeed, index)` 派生；牌组由 fuzzer 自行洗好后以
 `noShuffle: true` 传入（引擎的 `shuffle()` 使用 `Math.random`），`randomSeed` 显式指定。同一 `case.json` 重跑得到同一局。
+
+## 落盘配额
+
+长时间 campaign 里一个高频问题就能把磁盘和 inode 写满（单个失败目录约 1 MB，其中
+`detail-log.txt` 与 `gameLog.json` 占九成）。因此同一规范化错误键在**每个分片**内最多落
+`--max-artifacts-per-key` 份完整产物（默认 5，即全局约 `jobs × 5` 份），超出的用例仍然完整
+记入 `results.jsonl` 并在其中标记 `artifactSkipped: true`，只是不再写目录。`repro` 不受配额限制。
 
 ## known-issues.json
 

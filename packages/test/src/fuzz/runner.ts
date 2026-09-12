@@ -30,6 +30,8 @@ import { buildState } from "../dsl";
 import {
   agentToPlayerIo,
   createLegalAgent,
+  resolveWeights,
+  type ActionWeights,
   type Agent,
   type StrategyName,
   type TraceEntry,
@@ -73,6 +75,8 @@ export interface FuzzOptions {
   readonly maxRpcs: number;
   /** `unexpectedInsufficientDice = "throw"` */
   readonly strictDice: boolean;
+  /** 每局动作权重的对数均匀抖动倍率；1 表示沿用固定权重 */
+  readonly strategyJitter: number;
   /** 协议模式每次 rpc 注入非法响应的概率 */
   readonly maliceP: number;
   /** 场景模式抽取"与角色相关"实体的概率 */
@@ -146,6 +150,8 @@ export interface CaseResult {
   readonly warnings?: readonly string[];
   readonly injected?: Injection | null;
   readonly artifactDir?: string;
+  /** 同类产物已达上限而未落盘（见 `--max-artifacts-per-key`） */
+  readonly artifactSkipped?: boolean;
 }
 
 export class FuzzInvariantError extends Error {
@@ -166,6 +172,16 @@ export interface RunOptions {
   readonly alwaysWrite?: boolean;
   /** 每次 rpc 的心跳（hang watchdog） */
   readonly onRpc?: () => void;
+  /**
+   * 落盘前的配额检查：返回 false 时本用例只记入 results，不写完整产物目录。
+   * 用于给同一错误键的产物设上限，避免一个高频问题把磁盘写满。
+   */
+  readonly allowArtifact?: (result: CaseResult) => boolean;
+  /**
+   * 初始状态构造完成后的回调。父进程据此知道子进程死在哪一局的什么设定上，
+   * 而不必自己重跑 `prepareCase`。
+   */
+  readonly onSetup?: (setup: CaseSetup) => void;
 }
 
 const RECENT_NON_RESUMABLE = 32;
@@ -259,6 +275,7 @@ export async function runCase(
   const startedAt = performance.now();
   const { options } = spec;
   const { setup, initialState, rng, data } = prepareCase(spec);
+  run.onSetup?.(setup);
   const dice = setup.dice;
 
   // ---- 装配 ----
@@ -278,8 +295,15 @@ export async function runCase(
   let timedOut = false;
   let malicious: ReturnType<typeof createMaliciousAgent> | null = null;
 
+  const weights: ActionWeights[] = [];
   for (const who of [0, 1] as const) {
-    let agent: Agent = createLegalAgent(options.strategy);
+    const playerWeights = resolveWeights(
+      options.strategy,
+      rng.split(`weights${who}`),
+      options.strategyJitter,
+    );
+    weights.push(playerWeights);
+    let agent: Agent = createLegalAgent(playerWeights);
     if (setup.offender === who) {
       malicious = createMaliciousAgent(agent, rng.split("malice-agent"), options.maliceP);
       agent = malicious;
@@ -364,7 +388,16 @@ export async function runCase(
   }
   const injected = malicious?.injected ?? null;
   if (outcome === "ok") {
-    if (injected && setup.offender !== undefined) {
+    if (timedOut) {
+      // terminate() 之后 start() 也可能正常 resolve，此时不查 timedOut 会把超时
+      // 静默记成 ok（或 soft-warning）
+      outcome = "timeout";
+      error = {
+        name: "Timeout",
+        message: `case exceeded ${options.timeoutMs} ms; game.start() resolved after terminate()`,
+        causes: [],
+      };
+    } else if (injected && setup.offender !== undefined) {
       const offender = setup.offender;
       const blamedOffender =
         ioErrors.length === 1 && ioErrors[0].who === offender;
@@ -424,17 +457,23 @@ export async function runCase(
     injected,
   };
   if (run.outDir && (outcome !== "ok" || run.alwaysWrite)) {
-    const artifactDir = writeArtifact({
-      outDir: run.outDir,
-      result,
-      entries,
-      lastMutations,
-      detailLog: game.detailLog,
-      trace,
-      finalState: game.state,
-      softViolations,
-    });
-    result = { ...result, artifactDir: displayPath(artifactDir) };
+    // repro（alwaysWrite）永远落盘；campaign 里同一错误键超过上限后只记 results
+    if (run.alwaysWrite || !run.allowArtifact || run.allowArtifact(result)) {
+      const artifactDir = writeArtifact({
+        outDir: run.outDir,
+        result,
+        entries,
+        lastMutations,
+        detailLog: game.detailLog,
+        trace,
+        finalState: game.state,
+        softViolations,
+        weights,
+      });
+      result = { ...result, artifactDir: displayPath(artifactDir) };
+    } else {
+      result = { ...result, artifactSkipped: true };
+    }
   }
   return result;
 }

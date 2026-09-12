@@ -32,7 +32,7 @@ import {
   type GameStateLogEntry,
   type Mutation,
 } from "@gi-tcg/core";
-import type { TraceEntry } from "./agent";
+import type { ActionWeights, TraceEntry } from "./agent";
 import type { Violation } from "./invariants";
 import type { CaseResult } from "./runner";
 
@@ -269,19 +269,27 @@ export interface ArtifactInput {
   readonly trace: readonly TraceEntry[];
   readonly finalState: GameState | null;
   readonly softViolations: readonly Violation[];
+  /** 每个玩家本局实际使用的动作权重（见 `--strategy-jitter`） */
+  readonly weights?: readonly ActionWeights[];
 }
 
+/** 每个进程只查一次：失败密集时每份产物 fork 一个 git 进程是可观的开销 */
+let cachedGitCommit: string | undefined | null = null;
 function gitCommit(): string | undefined {
+  if (cachedGitCommit !== null) {
+    return cachedGitCommit;
+  }
   try {
-    return execSync("git rev-parse --short HEAD", {
+    cachedGitCommit = execSync("git rev-parse --short HEAD", {
       cwd: REPO_ROOT,
       stdio: ["ignore", "pipe", "ignore"],
     })
       .toString()
       .trim();
   } catch {
-    return undefined;
+    cachedGitCommit = undefined;
   }
+  return cachedGitCommit;
 }
 
 /** 在仓库根目录执行的复现命令（路径相对仓库根目录） */
@@ -456,6 +464,12 @@ function renderReport(
       lines.push(`  - 牌组(${deck.cards.length}): ${deck.cards.map(describeDef).join(", ")}`);
     });
   }
+  input.weights?.forEach((w, who) => {
+    const text = Object.entries(w)
+      .map(([kind, value]) => `${kind}=${value.toFixed(2)}`)
+      .join(" · ");
+    lines.push(`- player ${who} 动作权重: ${text || "(等概率)"}`);
+  });
   if (setup.scenario) {
     lines.push(fence(annotateIds(JSON.stringify(setup.scenario, null, 2)), "json"));
   }

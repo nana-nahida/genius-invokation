@@ -38,9 +38,9 @@ import {
 import {
   createCaseSpec,
   FAILURE_OUTCOMES,
-  prepareCase,
   runCase,
   type CaseResult,
+  type CaseSetup,
   type CaseSpec,
   type FuzzMode,
   type FuzzOptions,
@@ -69,6 +69,8 @@ run 选项:
   --timeout-ms <n>    单局超时（默认 120000）
   --max-rpcs <n>      单局 rpc 上限，超过则 giveUp（默认 2000）
   --strict-dice       unexpectedInsufficientDice = throw
+  --strategy-jitter <f>       每局动作权重的对数均匀抖动倍率（默认 5；1 = 固定权重）
+  --max-artifacts-per-key <n> 同一错误键最多落盘几份完整产物（默认 5；0 = 不限）
   --malice-p <p>      协议模式每次 rpc 注入概率（默认 0.15）
   --relatedness <p>   场景模式抽取角色相关实体的概率（默认 0.7）
   --out <dir>         产物目录（默认 packages/test/temp/fuzz/<seed>-<time>）
@@ -85,6 +87,8 @@ interface RunConfig {
   readonly options: FuzzOptions;
   readonly outDir: string;
   readonly stopOnFailure: boolean;
+  /** 同一错误键最多落盘几份完整产物；0 表示不限 */
+  readonly maxArtifactsPerKey: number;
 }
 
 /** worker 子进程接收的配置（JSON） */
@@ -123,6 +127,8 @@ function parseRun(argv: string[]): RunConfig {
       "timeout-ms": { type: "string", default: "120000" },
       "max-rpcs": { type: "string", default: "2000" },
       "strict-dice": { type: "boolean", default: false },
+      "strategy-jitter": { type: "string", default: "5" },
+      "max-artifacts-per-key": { type: "string", default: "5" },
       "malice-p": { type: "string", default: "0.15" },
       relatedness: { type: "string", default: "0.7" },
       out: { type: "string" },
@@ -161,6 +167,7 @@ function parseRun(argv: string[]): RunConfig {
     timeoutMs: num(values["timeout-ms"], "timeout-ms"),
     maxRpcs: num(values["max-rpcs"], "max-rpcs"),
     strictDice: values["strict-dice"]!,
+    strategyJitter: num(values["strategy-jitter"], "strategy-jitter"),
     maliceP: num(values["malice-p"], "malice-p"),
     relatedness: num(values.relatedness, "relatedness"),
   };
@@ -176,6 +183,10 @@ function parseRun(argv: string[]): RunConfig {
       ? resolveUserPath(values.out)
       : path.join(REPO_ROOT, "packages/test/temp/fuzz", `${seed}-${stamp}`),
     stopOnFailure: values["stop-on-failure"]!,
+    maxArtifactsPerKey: num(
+      values["max-artifacts-per-key"],
+      "max-artifacts-per-key",
+    ),
   };
 }
 
@@ -202,6 +213,8 @@ export function reportFailure(r: CaseResult): void {
   );
   if (dir) {
     console?.error?.(`  → ${dir}\n  ${reproCommand(path.join(dir, "case.json"))}`);
+  } else if (r.artifactSkipped) {
+    console?.error?.(`  → 同类产物已达 --max-artifacts-per-key 上限，未落盘`);
   }
 }
 
@@ -212,6 +225,21 @@ export async function runShard(cfg: ShardConfig): Promise<CaseResult[]> {
   const resultsFile = path.join(cfg.outDir, `results-${cfg.shard}.jsonl`);
   const progressFile = path.join(cfg.outDir, `progress-${cfg.shard}.json`);
   const results: CaseResult[] = [];
+  // 同一错误键在本分片最多落盘几份（全局上限约为 jobs × maxArtifactsPerKey）。
+  // 没有这个上限时，一个高频问题就能把磁盘和 inode 写满。
+  const artifactCounts = new Map<string, number>();
+  const allowArtifact = (r: CaseResult): boolean => {
+    if (cfg.maxArtifactsPerKey <= 0) {
+      return true;
+    }
+    const key = r.key ?? `(${r.outcome})`;
+    const used = artifactCounts.get(key) ?? 0;
+    if (used >= cfg.maxArtifactsPerKey) {
+      return false;
+    }
+    artifactCounts.set(key, used + 1);
+    return true;
+  };
   const end = cfg.startIndex + cfg.count;
   const t0 = performance.now();
   let done = 0;
@@ -229,6 +257,14 @@ export async function runShard(cfg: ShardConfig): Promise<CaseResult[]> {
     const result = await runCase(specFor(cfg, index), {
       outDir: cfg.outDir,
       onRpc: () => watchdog.beat(),
+      allowArtifact,
+      // prepareCase 成功后补写一次进度：子进程若死在本局，父进程直接读这里的设定
+      onSetup: (setup) => {
+        writeFileSync(
+          progressFile,
+          JSON.stringify({ index, at: Date.now(), setup }),
+        );
+      },
     });
     results.push(result);
     appendFileSync(resultsFile, resultLine(result) + "\n");
@@ -266,7 +302,9 @@ async function runParallel(cfg: RunConfig): Promise<CaseResult[]> {
   const workerPath = fileURLToPath(new URL("./worker.ts", import.meta.url));
   const extra: CaseResult[] = [];
   const t0 = performance.now();
-  const readProgress = (shard: number): { index: number | null; at: number } | null => {
+  const readProgress = (
+    shard: number,
+  ): { index: number | null; at: number; setup?: CaseSetup } | null => {
     const file = path.join(cfg.outDir, `progress-${shard}.json`);
     if (!existsSync(file)) {
       return null;
@@ -278,7 +316,12 @@ async function runParallel(cfg: RunConfig): Promise<CaseResult[]> {
     }
   };
   /** 子进程在处理第 index 个用例时消失：记为 hang/crash 并写产物 */
-  const recordLost = (index: number, outcome: "hang" | "crash", detail: string) => {
+  const recordLost = (
+    index: number,
+    outcome: "hang" | "crash",
+    detail: string,
+    reported?: CaseSetup,
+  ) => {
     const spec = specFor(cfg, index);
     const hangFile = hangFilePath(cfg.outDir, index);
     let capture: HangCapture | undefined;
@@ -290,17 +333,15 @@ async function runParallel(cfg: RunConfig): Promise<CaseResult[]> {
         // ignore
       }
     }
-    let setup: CaseResult["setup"] = {
+    // 绝不在父进程里重跑 prepareCase：子进程可能正是死在建初始状态上（同步死循环
+    // 或 OOM），父进程重跑会把自己一起搭进去，整轮 campaign 全丢。设定由子进程在
+    // prepareCase 成功后写进 progress 文件，读不到就用占位值。
+    const setup: CaseResult["setup"] = reported ?? {
       mode: spec.options.mode,
       version: "?" as Version,
       dice: "omni",
       randomSeed: 0,
     };
-    try {
-      setup = prepareCase(spec).setup;
-    } catch {
-      // 连初始状态都建不出来时保持占位
-    }
     const result: CaseResult = {
       spec,
       setup,
@@ -346,7 +387,7 @@ async function runParallel(cfg: RunConfig): Promise<CaseResult[]> {
               ? `worker stuck on #${p.index} for >${Math.round((Date.now() - p.at) / 1000)}s${killedByParent ? " (killed by parent)" : ""}`
               : `worker exited with code ${code} signal ${signal} on #${p.index}`;
           console?.error?.(`[fuzz] shard ${shard}: ${detail}，从 #${p.index + 1} 重启`);
-          recordLost(p.index, outcome, detail);
+          recordLost(p.index, outcome, detail, p.setup);
           resolve(runShardProcess(shard, p.index + 1));
           return;
         }
