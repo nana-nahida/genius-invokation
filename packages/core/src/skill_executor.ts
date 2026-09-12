@@ -510,7 +510,9 @@ export class SkillExecutor {
           targets: targets.targets,
           willBeEffectless,
           cost: requiredCost,
+          originalCost: requiredCost,
           fast: shouldFast,
+          originalFast: shouldFast,
           autoSelectedDice: [],
           validity: ActionValidity.VALID,
         };

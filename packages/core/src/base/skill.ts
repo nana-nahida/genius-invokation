@@ -329,7 +329,9 @@ export type ActionInfoBase =
   | DeclareEndInfo;
 
 export type WithActionDetail<T extends ActionInfoBase> = T & {
+  readonly originalCost: ReadonlyDiceRequirement;
   readonly cost: ReadonlyDiceRequirement;
+  readonly originalFast: boolean;
   readonly fast: boolean;
   readonly validity: ActionValidity;
   readonly autoSelectedDice: DiceType[];
@@ -769,6 +771,9 @@ export class PlayCardEventArg extends PlayerEventArg {
   }
   playCost() {
     return diceCostSize(this.playCardInfo.cost);
+  }
+  originalPlayCost() {
+    return diceCostSize(this.playCardInfo.originalCost);
   }
   get card() {
     return this.playCardInfo.skill.caller;
