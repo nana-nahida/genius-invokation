@@ -16,7 +16,7 @@
 import { IS_BETA } from "@gi-tcg/config";
 import type { Language } from "./manager";
 
-export const DEFAULT_ASSETS_API_ENDPOINT =
+export const DEFAULT_ASSETS_API_ENDPOINT: string =
   import.meta.env?.DEFAULT_ASSETS_API_ENDPOINT ||
   // @ts-expect-error Node.js typing
   globalThis.process?.env.DEFAULT_ASSETS_API_ENDPOINT ||
