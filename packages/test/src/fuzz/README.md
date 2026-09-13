@@ -73,8 +73,11 @@ fuzz repro <case.json>     按 case.json 里的 (种子, 序号, 选项) 重跑�
 权重由种子派生，因此仍然可复现，并写在失败报告的"对局设定"里。
 
 牌组合法性离线从 `GameData` 推导：可入牌组的卡 = type ∈ {eventCard, equipment, support} 且
-（`obtainable` 或带 talent/adventureSpot/blessing/technique 标签）；天赋牌按 id 约定
-（`2` + 角色 id + 序号）绑定角色。
+（`obtainable` 或带 talent/adventureSpot/blessing 标签）；天赋牌按 id 约定
+（`2` + 角色 id + 序号）绑定角色。带 `technique` 标签的卡不额外放行：可入牌组的特技牌
+（313001-313010）本身就是 `obtainable`，其余 12 张（刃轮装束、驰轮车、竹星、厄灵……）
+只能由角色技能附属给特定角色，放进牌组会造出正式对局中不可能出现的状态，只在
+`--deck-shape chaos` 下才会被抽到。
 
 ### 结果分类
 

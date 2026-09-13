@@ -27,8 +27,13 @@ import type { Prng } from "./prng";
  * 离线牌组生成：直接从 `GameData` 推导可入牌组的卡牌，不依赖 assets 数据。
  *
  * - 可入牌组的卡 = type ∈ {eventCard, equipment, support} 且
- *   （`obtainable` 或带有 talent/adventureSpot/blessing/technique 标签）；
- *   `obtainable=false` 只表示"不能被随机生成"，天赋/秘境/祝福/特技都是 false。
+ *   （`obtainable` 或带有 talent/adventureSpot/blessing 标签）；
+ *   `obtainable=false` 只表示"不能被随机生成"，天赋/秘境/祝福都是 false。
+ * - `technique` 不在白名单里：真正可入牌组的特技牌（313001-313010）本身就是
+ *   `obtainable`，而另外 12 张带该标签的（刃轮装束、驰轮车、竹星、厄灵……）是只能
+ *   由角色技能附属到特定角色身上的 token。把它们放进牌组会造出正式对局中不可能
+ *   出现的状态——例如让丝柯克装上希诺宁的刃轮装束，同一角色叠出两层「物理转元素」
+ *   附魔，从而刷出一批无法在真实对局里复现的 damage type 警告。
  * - 天赋牌按 id 约定绑定角色：`2` + 角色 id + 序号（1503 → 215031）。
  * - 秘传（legend）与祝福（blessing）每套 ≤1 张，其余 ≤2 张。
  */
@@ -56,7 +61,7 @@ const DECK_CARD_TYPES: ReadonlySet<string> = new Set([
   "equipment",
   "support",
 ]);
-const LEGAL_UNOBTAINABLE_TAGS = ["talent", "adventureSpot", "blessing", "technique"];
+const LEGAL_UNOBTAINABLE_TAGS = ["talent", "adventureSpot", "blessing"];
 const SINGLETON_TAGS = ["legend", "blessing"];
 
 const poolCache = new Map<Version, CardPool>();
