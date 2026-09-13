@@ -137,6 +137,26 @@ function scenarioPools(pool: CardPool): Pools {
   return pools;
 }
 
+/**
+ * 角色专属实体只能出现在它自己的宿主身上。
+ *
+ * 这些实体的处理器里普遍写着 `master.setVariable("xxx")` / `master.getVariable("xxx")`，
+ * 而 `xxx` 只有宿主角色的定义才声明。挂到别的角色身上，引擎在 `setVariable` 里查不到
+ * varConfig，会抛 `Cannot read properties of undefined (reading 'upperBound')`，
+ * 有的还会把结算逻辑带进死循环。那是生成器造出的**现实中不可能出现**的状态树，
+ * 报出来是假阳性，会把真正的引擎问题淹掉。
+ *
+ * 没有宿主的通用实体（冻结、结晶盾、场地牌等）不受此限制，可以挂到任意角色。
+ */
+function belongsTo(
+  def: EntityDefinition,
+  ch: CharacterDefinition,
+  pool: CardPool,
+): boolean {
+  const owner = ownerOf(def.id, pool);
+  return owner === null || owner === ch.id;
+}
+
 /** 角色专属实体：1 + 角色 id + 序号；天赋：2 + 角色 id + 序号 */
 function ownerOf(id: number, pool: CardPool): number | null {
   if (id >= 100000 && id < 200000) {
@@ -248,6 +268,7 @@ export function generateScenario(
         for (let s = 0; s < statusCount; s++) {
           const def = related(ch, pools.status, "status", (d) =>
             !used.has(d.id) &&
+            belongsTo(d, ch, pool) &&
             (!d.tags.some((t) => RELATED_ONLY_TAGS.includes(t)) ||
               ownerOf(d.id, pool) === ch.id),
           );
@@ -282,7 +303,12 @@ export function generateScenario(
       const out: EntityDefinition[] = [];
       for (let k = 0; k < count; k++) {
         const ch = rng.pick(chars);
-        const def = related(ch, general, type, (d) => !used.has(d.id));
+        const def = related(
+          ch,
+          general,
+          type,
+          (d) => !used.has(d.id) && belongsTo(d, ch, pool),
+        );
         if (def) {
           used.add(def.id);
           out.push(def);
