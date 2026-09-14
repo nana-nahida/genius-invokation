@@ -250,13 +250,17 @@ export function generateScenario(
           } else if (group === "weapon") {
             const weaponType = ch.tags.find((t) => WEAPON_TYPES.includes(t));
             const list = pools.equipment.weapon.filter(
-              (d) => !weaponType || d.tags.includes(weaponType as never),
+              (d) =>
+                (!weaponType || d.tags.includes(weaponType as never)) &&
+                belongsTo(d, ch, pool),
             );
             def = list.length ? rng.pick(list) : null;
           } else {
-            def = pools.equipment[group].length
-              ? rng.pick(pools.equipment[group])
-              : null;
+            // 特技牌（刃轮装束等）也是角色专属的，不能挂到别的角色上
+            const list = pools.equipment[group].filter((d) =>
+              belongsTo(d, ch, pool),
+            );
+            def = list.length ? rng.pick(list) : null;
           }
           if (def) {
             entityElements.push(Equipment({ def: handle(def.id), ...randomVars(def, rng) }));
