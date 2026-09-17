@@ -67,6 +67,7 @@ define status {
 define status {
   id 114122 as DarkshatteringFlameInEffect;
   since "v5.3.0";
+  oneDuration;
   on increaseSkillDamage {
     usage 1 {
       append;

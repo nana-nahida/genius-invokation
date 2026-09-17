@@ -363,11 +363,6 @@ define card {
   support {
     variable spirit, 0;
     associateExtension FlamesOfWarExtension;
-    on staged {
-      :setExtensionState((st) => {
-        st.spirit[:self.who] = :getVariable("spirit");
-      });
-    };
     on dealDamage {
       :setVariable("spirit", :getExtensionState().spirit[:self.who]);
     };
@@ -396,31 +391,47 @@ define card {
   id 330010 as PilgrimageOfTheReturnOfTheSacredFlame;
   since "v5.3.0";
   legend;
+  associateExtension FlamesOfWarExtension;
   const myExistsFlame = :query($.my.support.def(FlamesOfWar));
   const oppExistsFlame = :query($.opp.support.def(FlamesOfWar));
-  if (myExistsFlame) {
-    myExistsFlame.addVariable("spirit", 1);
-  } else if (:remainingSupportCount("my") > 0) {
+  if (myExistsFlame || :remainingSupportCount("my") > 0) {
+    :setExtensionState((st) => {
+      st.spirit[:self.who]++;
+    });
+    const spirit = :getExtensionState().spirit[:self.who];
+    if (myExistsFlame) {
+      myExistsFlame.setVariable("spirit", spirit);
+    } else {
+      :createEntity(
+        "support",
+        FlamesOfWar,
+        {
+          who: :self.who,
+          type: "supports",
+        },
+        {
+          overrideVariables: {
+            spirit,
+          },
+        },
+      );
+    }
+  }
+  if (oppExistsFlame) {
+  } else if (:remainingSupportCount("opp") > 0) {
     :createEntity(
       "support",
       FlamesOfWar,
       {
-        who: :self.who,
+        who: flip(:self.who),
         type: "supports",
       },
       {
         overrideVariables: {
-          spirit: 1,
+          spirit: :getExtensionState().spirit[flip(:self.who)],
         },
       },
     );
-  }
-  if (oppExistsFlame) {
-  } else if (:remainingSupportCount("opp") > 0) {
-    :createEntity("support", FlamesOfWar, {
-      who: flip(:self.who),
-      type: "supports",
-    });
   }
 };
 
