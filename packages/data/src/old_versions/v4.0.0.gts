@@ -18,7 +18,10 @@ import {
   KamisatoArtMarobashi,
   KyoukaFuushi,
 } from "../characters/hydro/kamisato_ayato.gts";
-import { FatuiCryoCicinMage } from "../characters/cryo/fatui_cryo_cicin_mage.gts";
+import {
+  CicinIcicle,
+  CicinsColdGlare,
+} from "../characters/cryo/fatui_cryo_cicin_mage.gts";
 import { Diona, IcyPaws } from "../characters/cryo/diona.gts";
 import { RainbowBladework } from "../characters/hydro/xingqiu.gts";
 import { ReviveOnCooldown } from "../cards/event/food.gts";
@@ -49,6 +52,7 @@ define skill {
  */
 define status {
   id 112043 as Riptide;
+  until "v4.0.0";
   duration 2;
   // 参见主注释
   on selfDispose {
@@ -182,6 +186,7 @@ define summon {
   id 121011 as private CryoCicins;
   until "v4.0.0";
   hint DamageType.Cryo, 1;
+  variable talentExtraDamage, 0;
   on endPhase {
     usage 2 {
       append 3;
@@ -189,15 +194,22 @@ define summon {
     :damage(DamageType.Cryo, 1);
   };
   on useSkill {
-    when :(
-      :e.skill.caller.definition.id === FatuiCryoCicinMage &&
-        :e.isSkillType("normal")
-    );
-    :addVariable("usage", 1);
+    when :( :e.skill.definition.id === CicinIcicle );
+    if (:getVariable("usage") < 3) {
+      :addVariable("usage", 1);
+    } else if (:query($.my.equipped.def(CicinsColdGlare))) {
+      :setVariable("talentExtraDamage", 1);
+    }
   };
   on damaged {
     when :( :e.getReaction() );
     :consumeUsage();
+  };
+  // 天赋效果
+  on useSkill {
+    when :( :getVariable("talentExtraDamage") );
+    :setVariable("talentExtraDamage", 0);
+    :damage(DamageType.Cryo, 2);
   };
 };
 
