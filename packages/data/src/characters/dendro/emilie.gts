@@ -109,6 +109,7 @@ define status {
 /**
  * @id 17101
  * @name 逐影枪术·改
+ * @cost 1*Dendro, 2*Void
  * @description
  * 造成2点物理伤害。
  */
@@ -123,6 +124,7 @@ define skill {
 /**
  * @id 17102
  * @name 撷萃调香
+ * @cost 3*Dendro
  * @description
  * 召唤柔灯之匣·一阶。
  */
@@ -140,6 +142,7 @@ define skill {
 /**
  * @id 17103
  * @name 香氛演绎
+ * @cost 3*Dendro, 2*Energy
  * @description
  * 造成1点草元素伤害。召唤柔灯之匣·三阶。
  */
@@ -155,6 +158,7 @@ define skill {
 /**
  * @id 17104
  * @name 余薰
+ * @cost
  * @description
  * 我方燃烧烈焰入场时：下次双方角色使用技能后，触发一次燃烧烈焰的回合结束效果。（每回合2次）
  */
@@ -175,6 +179,7 @@ define skill {
 /**
  * @id 17105
  * @name 余薰
+ * @cost
  * @description
  * 我方燃烧烈焰入场时：下次双方角色使用技能后，触发1次我方燃烧烈焰的回合结束效果。（每回合2次）
  */
@@ -187,6 +192,8 @@ define skill {
 /**
  * @id 1710
  * @name 艾梅莉埃
+ * @hp 10
+ * @energy 2
  * @description
  * 如香消，如雾散。
  */
@@ -205,6 +212,7 @@ define character {
 /**
  * @id 217101
  * @name 茉洁香迹
+ * @cost 2*Dendro
  * @description
  * 所附属角色造成的物理伤害变为草元素伤害。
  * 装备有此牌的艾梅莉埃普通攻击后：我方最高等级的「柔灯之匣」立刻行动1次。（每回合1次）

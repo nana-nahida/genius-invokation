@@ -58,6 +58,7 @@ define status {
 /**
  * @id 13101
  * @name 迫牌易位式
+ * @cost 1*Pyro, 2*Void
  * @description
  * 造成2点物理伤害。
  */
@@ -72,6 +73,7 @@ define skill {
 /**
  * @id 13102
  * @name 隐具魔术箭
+ * @cost 3*Pyro
  * @description
  * 造成2点火元素伤害，召唤怪笑猫猫帽，累积1层隐具余数。
  * 如果本角色生命值至少为6，则对自身造成1点穿透伤害。
@@ -96,6 +98,7 @@ define skill {
 /**
  * @id 13103
  * @name 眩惑光戏法
+ * @cost 3*Pyro
  * @description
  * 造成3点火元素伤害。
  */
@@ -109,6 +112,7 @@ define skill {
 /**
  * @id 13104
  * @name 大魔术·灵迹巡游
+ * @cost 3*Pyro, 2*Energy
  * @description
  * 造成3点火元素伤害，召唤怪笑猫猫帽，累积1层隐具余数。
  */
@@ -130,6 +134,8 @@ define skill {
 /**
  * @id 1310
  * @name 林尼
+ * @hp 10
+ * @energy 2
  * @description
  * 镜中捧花，赠予何人。
  */
@@ -148,6 +154,7 @@ define character {
 /**
  * @id 213101
  * @name 完场喝彩
+ * @cost 3*Pyro
  * @description
  * 战斗行动：我方出战角色为林尼时，装备此牌。
  * 林尼装备此牌后，立刻使用一次隐具魔术箭。

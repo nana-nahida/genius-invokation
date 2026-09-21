@@ -73,6 +73,7 @@ define combatStatus {
 /**
  * @id 14081
  * @name 狐灵食罪式
+ * @cost 1*Electro, 2*Void
  * @description
  * 造成1点雷元素伤害。
  */
@@ -87,6 +88,7 @@ define skill {
 /**
  * @id 14082
  * @name 野干役咒·杀生樱
+ * @cost 3*Electro
  * @description
  * 召唤杀生樱。如果场上原本已存在杀生樱，则额外使其造成的伤害+1。（最多+1）
  */
@@ -104,6 +106,7 @@ define skill {
 /**
  * @id 14083
  * @name 大密法·天狐显真
+ * @cost 3*Electro, 2*Energy
  * @description
  * 造成4点雷元素伤害；如果我方场上存在杀生樱，则将其消灭，然后生成天狐霆雷。
  */
@@ -126,6 +129,8 @@ define skill {
 /**
  * @id 1408
  * @name 八重神子
+ * @hp 10
+ * @energy 2
  * @description
  * 「兼具智慧与美貌的八重神子大人」
  */
@@ -143,6 +148,7 @@ define character {
 /**
  * @id 214081
  * @name 神篱之御荫
+ * @cost 3*Electro, 2*Energy
  * @description
  * 战斗行动：我方出战角色为八重神子时，装备此牌。
  * 八重神子装备此牌后，立刻使用一次大密法·天狐显真。

@@ -56,6 +56,7 @@ define status {
 /**
  * @id 17021
  * @name 藏蕴破障
+ * @cost 1*Dendro, 2*Void
  * @description
  * 造成2点物理伤害。
  */
@@ -70,6 +71,7 @@ define skill {
 /**
  * @id 17022
  * @name 识果种雷
+ * @cost 3*Dendro
  * @description
  * 造成2点草元素伤害，本角色附属通塞识。
  */
@@ -84,6 +86,7 @@ define skill {
 /**
  * @id 17023
  * @name 造生缠藤箭
+ * @cost 3*Dendro, 2*Energy
  * @description
  * 造成4点草元素伤害，对所有敌方后台角色造成1点穿透伤害。
  */
@@ -99,6 +102,8 @@ define skill {
 /**
  * @id 1702
  * @name 提纳里
+ * @hp 10
+ * @energy 2
  * @description
  * 从某种角度来说，经验并不等同于智慧。
  */
@@ -114,6 +119,7 @@ define character {
 /**
  * @id 217021
  * @name 眼识殊明
+ * @cost 3*Dendro
  * @description
  * 战斗行动：我方出战角色为提纳里时，装备此牌。
  * 提纳里装备此牌后，立刻使用一次识果种雷。
