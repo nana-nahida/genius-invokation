@@ -27,8 +27,7 @@ define summon {
   hint DamageType.Hydro, "1";
   on endPhase {
     usage 2 {
-      append;
-      range 4;
+      append 4;
     };
     if (
       :query($.my.equipped.def(TamakushiCasket)) &&
@@ -66,6 +65,7 @@ define status {
 /**
  * @id 12051
  * @name 水有常形
+ * @cost 1*Hydro, 2*Void
  * @description
  * 造成1点水元素伤害。
  */
@@ -80,6 +80,7 @@ define skill {
 /**
  * @id 12052
  * @name 海月之誓
+ * @cost 3*Hydro
  * @description
  * 本角色附着水元素，召唤化海月。
  */
@@ -94,6 +95,7 @@ define skill {
 /**
  * @id 12053
  * @name 海人化羽
+ * @cost 3*Hydro, 2*Energy
  * @description
  * 造成2点水元素伤害，治疗所有我方角色1点，本角色附属仪来羽衣。
  */
@@ -110,8 +112,11 @@ define skill {
     if (summon) {
       summon.addVariable("usage", 1);
     } else {
-      summon = :summon(BakeKurage)!;
-      summon.setVariable("usage", 1);
+      :summon(BakeKurage, "my", {
+        overrideVariables: {
+          usage: 1,
+        },
+      });
     }
   }
 };
@@ -119,6 +124,8 @@ define skill {
 /**
  * @id 1205
  * @name 珊瑚宫心海
+ * @hp 12
+ * @energy 2
  * @description
  * 未雨绸缪，临危莫乱。
  */
@@ -134,6 +141,7 @@ define character {
 /**
  * @id 212051
  * @name 匣中玉栉
+ * @cost 3*Hydro, 2*Energy
  * @description
  * 战斗行动：我方出战角色为珊瑚宫心海时，装备此牌。
  * 珊瑚宫心海装备此牌后，立刻使用一次海人化羽。

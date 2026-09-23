@@ -24,11 +24,16 @@ import { $, DamageType, DiceType, type CardHandle } from "@gi-tcg/core/data";
 define status {
   id 116071 as ShieldOfSwirlingClouds;
   shield 2;
+  on switchActive {
+    when :( :self.master.id === :e.switchInfo.from?.id );
+    :dispose();
+  };
 };
 
 /**
  * @id 16074
  * @name 长枪开相
+ * @cost
  * @description
  * 造成2点岩元素伤害；如果本回合中我方舍弃或调和过至少1张牌，则此伤害+1。
  */
@@ -71,8 +76,7 @@ define combatStatus {
   on increaseSkillDamage {
     when :( :e.viaSkillType("normal") && :player.hands.length <= 1 );
     usage 1 {
-      append;
-      range 4;
+      append 4;
     };
     if (
       :query($.my.equipped.def(DecorousHarmony)) && // 装备了天赋
@@ -86,6 +90,7 @@ define combatStatus {
 /**
  * @id 16071
  * @name 拂云出手
+ * @cost 1*Geo, 2*Void
  * @description
  * 造成2点物理伤害。
  */
@@ -100,6 +105,7 @@ define skill {
 /**
  * @id 16072
  * @name 旋云开相
+ * @cost 3*Geo
  * @description
  * 生成飞云旗阵，本角色附属旋云护盾并准备技能：长枪开相。
  */
@@ -115,6 +121,7 @@ define skill {
 /**
  * @id 16073
  * @name 破嶂见旌仪
+ * @cost 3*Geo, 2*Energy
  * @description
  * 造成3点岩元素伤害，生成3层飞云旗阵。
  */
@@ -131,9 +138,10 @@ define skill {
 
 /**
  * @id 16075
- * @name
+ * @name 
+ * @cost
  * @description
- *
+ * 
  */
 define skill {
   id 16075 as CountDiscardOrTune;
@@ -151,6 +159,8 @@ define skill {
 /**
  * @id 1607
  * @name 云堇
+ * @hp 10
+ * @energy 2
  * @description
  * 红毹婵娟，庄谐并举。
  */
@@ -170,6 +180,7 @@ define character {
 /**
  * @id 216071
  * @name 庄谐并举
+ * @cost 3*Geo, 2*Energy
  * @description
  * 战斗行动：我方出战角色为云堇时，装备此牌。
  * 云堇装备此牌后，立刻使用一次破嶂见旌仪。

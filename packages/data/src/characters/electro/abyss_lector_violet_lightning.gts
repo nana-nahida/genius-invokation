@@ -68,6 +68,7 @@ define status {
     const talent = :self.master.hasEquipment(ChainLightningCascade);
     if (talent) {
       :dispose(talent);
+      // 依据测试结果，官方不弃置124065，状态可在失去天赋后触发
       :query($.opp.active)?.loseEnergy(1);
     }
     :characterStatus(ElectricRebirthHoned, :self.master);
@@ -78,6 +79,7 @@ define status {
 /**
  * @id 24061
  * @name 渊薮落雷
+ * @cost 1*Electro, 2*Void
  * @description
  * 造成1点雷元素伤害。
  */
@@ -92,6 +94,7 @@ define skill {
 /**
  * @id 24062
  * @name 秘渊虚霆
+ * @cost 3*Electro
  * @description
  * 造成3点雷元素伤害。
  * 如果目标已附着雷元素，则夺取对方1点充能。（如果夺取时此角色充能已满，则改为由下一个充能未满的角色获得充能）
@@ -113,6 +116,7 @@ define skill {
 /**
  * @id 24063
  * @name 狂迸骇雷
+ * @cost 3*Electro, 2*Energy
  * @description
  * 造成3点雷元素伤害。
  * 如果目标充能不多于1，造成的伤害+2。
@@ -132,6 +136,7 @@ define skill {
 /**
  * @id 24064
  * @name 雷之新生
+ * @cost
  * @description
  * 【被动】战斗开始时，初始附属雷之新生。
  */
@@ -147,6 +152,7 @@ define skill {
 /**
  * @id 24065
  * @name 雷之新生
+ * @cost
  * @description
  * 战斗开始时，初始附属雷之新生。
  */
@@ -159,6 +165,8 @@ define skill {
 /**
  * @id 2406
  * @name 深渊咏者·紫电
+ * @hp 6
+ * @energy 2
  * @description
  * 高颂渊薮，侵蚀之智。
  */
@@ -187,6 +195,7 @@ define combatStatus {
 /**
  * @id 224061
  * @name 侵雷重闪
+ * @cost 1*Electro
  * @description
  * 入场时：如果装备有此牌的深渊咏者·紫电已触发过雷之新生，则使敌方出战角色失去1点充能。
  * 装备有此牌的深渊咏者·紫电被击倒或触发雷之新生时：弃置此牌，使敌方出战角色失去1点充能。

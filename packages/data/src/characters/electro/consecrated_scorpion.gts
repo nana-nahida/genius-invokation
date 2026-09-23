@@ -27,8 +27,7 @@ define combatStatus {
   id 124052 as ThunderboreTrap;
   on useSkill {
     usage 0 {
-      append;
-      range 3;
+      append 3;
     };
     :damage(DamageType.Electro, 2, $.my.active);
   };
@@ -37,6 +36,7 @@ define combatStatus {
 /**
  * @id 24051
  * @name 蝎爪钳击
+ * @cost 1*Electro, 2*Void
  * @description
  * 造成2点物理伤害。
  */
@@ -51,6 +51,7 @@ define skill {
 /**
  * @id 24052
  * @name 蝎尾锥刺
+ * @cost 3*Electro
  * @description
  * 造成3点雷元素伤害。
  * 生成1张噬骸能量块，随机置入我方牌库顶部2张牌之中。
@@ -66,6 +67,7 @@ define skill {
 /**
  * @id 24053
  * @name 雷锥散射
+ * @cost 3*Electro, 2*Energy
  * @description
  * 造成3点雷元素伤害，舍弃手牌中最多3张噬骸能量块，在对方场上生成雷锥陷阱。
  */
@@ -89,6 +91,7 @@ define skill {
 /**
  * @id 24054
  * @name 不朽亡骸·雷
+ * @cost
  * @description
  * 【被动】回合结束时，生成2张噬骸能量块，随机置入我方牌库顶部10张牌之中。
  */
@@ -104,6 +107,8 @@ define skill {
 /**
  * @id 2405
  * @name 圣骸毒蝎
+ * @hp 10
+ * @energy 2
  * @description
  * 因为啃噬伟大的生命体，而扭曲异变的毒蝎，操纵着险恶的轰雷。
  */
@@ -122,6 +127,7 @@ define character {
 /**
  * @id 224051
  * @name 亡雷凝蓄
+ * @cost 1*Electro
  * @description
  * 入场时：生成1张噬骸能量块，置入我方手牌。
  * 装备有此牌的圣骸毒蝎在场，我方打出噬骸能量块后：抓1张牌，然后生成1张噬骸能量块，随机置入我方牌库中。
@@ -154,6 +160,7 @@ const _1 = void 0; // moved to cards
 /**
  * @id 124051
  * @name 噬骸能量块
+ * @cost
  * @description
  * 随机舍弃1张当前元素骰费用最高的手牌，生成1个我方出战角色类型的元素骰。（每回合最多打出1张）
  */

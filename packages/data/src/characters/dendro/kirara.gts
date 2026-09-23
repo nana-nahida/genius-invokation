@@ -49,7 +49,7 @@ define combatStatus {
  */
 define combatStatus {
   id 117072 as ShieldOfSafeTransport;
-  shield 1, Infinity;
+  shield 1, open;
 };
 
 /**
@@ -64,8 +64,7 @@ define combatStatus {
   on switchActive {
     when :( :e.switchInfo.from?.definition.id === Kirara );
     usage 1 {
-      append;
-      range 2;
+      append 2;
     };
     :damage(DamageType.Dendro, 2);
     :drawCards(1);
@@ -75,6 +74,7 @@ define combatStatus {
 /**
  * @id 17071
  * @name 箱纸切削术
+ * @cost 1*Dendro, 2*Void
  * @description
  * 造成2点物理伤害。
  */
@@ -89,6 +89,7 @@ define skill {
 /**
  * @id 17072
  * @name 呜喵町飞足
+ * @cost 3*Dendro
  * @description
  * 生成猫箱急件和2层安全运输护盾。
  */
@@ -105,6 +106,7 @@ define skill {
 /**
  * @id 17073
  * @name 秘法·惊喜特派
+ * @cost 3*Dendro, 2*Energy
  * @description
  * 造成4点草元素伤害，在敌方场上生成猫草豆蔻。
  */
@@ -120,6 +122,8 @@ define skill {
 /**
  * @id 1707
  * @name 绮良良
+ * @hp 10
+ * @energy 2
  * @description
  * 歧尾骏足，通达万户。
  */
@@ -135,6 +139,7 @@ define character {
 /**
  * @id 217071
  * @name 沿途百景会心
+ * @cost 3*Dendro
  * @description
  * 战斗行动：我方出战角色为绮良良时，装备此牌。
  * 绮良良装备此牌后，立刻使用一次呜喵町飞足。

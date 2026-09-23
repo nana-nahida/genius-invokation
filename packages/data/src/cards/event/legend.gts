@@ -13,13 +13,14 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import { $, DiceType, flip } from "@gi-tcg/core/data";
+import { $, DiceType, flip, type CardHandle } from "@gi-tcg/core/data";
 import { DisperseTheCalamity, SanctifyTheDefiled } from "./other.gts";
 import { IneffectiveWhenPlayed } from "../../commons.gts";
 
 /**
  * @id 330001
  * @name 旧时庭园
+ * @cost 1*Legend
  * @description
  * 我方有角色已装备「武器」或「圣遗物」时，才能打出：本回合中，我方下次打出「武器」或「圣遗物」装备牌时少花费2个元素骰。
  * （整局游戏只能打出一张「秘传」卡牌；这张牌一定在你的起始手牌中）
@@ -57,6 +58,7 @@ define combatStatus {
 /**
  * @id 330002
  * @name 磐岩盟契
+ * @cost 1*Legend
  * @description
  * 我方剩余元素骰数量为0时，才能打出：生成2个不同的基础元素骰。
  * （整局游戏只能打出一张「秘传」卡牌；这张牌一定在你的起始手牌中）
@@ -72,6 +74,7 @@ define card {
 /**
  * @id 330003
  * @name 愉舞欢游
+ * @cost 1*Legend
  * @description
  * 我方出战角色的元素类型为冰/水/火/雷/草时，才能打出：对我方所有具有元素附着的角色，附着我方出战角色类型的元素。
  * （整局游戏只能打出一张「秘传」卡牌；这张牌一定在你的起始手牌中）
@@ -100,6 +103,7 @@ define card {
 /**
  * @id 330004
  * @name 自由的新风
+ * @cost 1*Legend
  * @description
  * 本回合中，轮到我方行动期间有对方角色被击倒时：本次行动结束后，我方可以再连续行动一次。
  * 可用次数：1
@@ -141,6 +145,7 @@ define combatStatus {
 /**
  * @id 330005
  * @name 万家灶火
+ * @cost 1*Legend
  * @description
  * 第1回合打出此牌时：如果我方牌组中初始包含至少4/2张不同的「天赋」牌，则抓2/1张「天赋」牌。
  * 第2回合及以后打出此牌时：我方抓当前的回合数-1数量的牌。（最多抓4张）
@@ -193,6 +198,7 @@ define combatStatus {
   oneDuration;
   on playCard {
     when :( :e.card.definition.type === "eventCard" );
+    // 实际无可用次数限制，以状态描述为准
     for (const hand of :player.hands) {
       if (hand.definition.type === "eventCard") {
         :attach(IneffectiveWhenPlayed, hand);
@@ -209,6 +215,7 @@ define combatStatus {
 /**
  * @id 330006
  * @name 裁定之时
+ * @cost 1*Legend
  * @description
  * 本回合中，敌方下次打出事件牌后：赋予敌方手牌中所有事件牌无效化。
  * 本回合中，敌方舍弃手牌后：将敌方手牌中2张当前元素骰费用最高的卡牌置入牌组底。
@@ -224,6 +231,7 @@ define card {
 /**
  * @id 330007
  * @name 抗争之日·碎梦之时
+ * @cost 1*Legend
  * @description
  * 本回合中，目标我方角色受到的伤害-1。（最多生效4次）
  * （整局游戏只能打出一张「秘传」卡牌；这张牌一定在你的起始手牌中）
@@ -260,6 +268,7 @@ define status {
 /**
  * @id 330008
  * @name 旧日鏖战
+ * @cost 1*Legend
  * @description
  * 敌方出战角色失去1点充能。
  * （整局游戏只能打出一张「秘传」卡牌；这张牌一定在你的起始手牌中）
@@ -288,6 +297,7 @@ define status {
 /**
  * @id 330009
  * @name 赦免宣告
+ * @cost 1*Aligned, 1*Legend
  * @description
  * 治疗目标角色2点。
  * 目标角色免疫冻结、眩晕、石化等无法使用技能的效果，并且该角色为「出战角色」时不会因效果而切换，持续2个回合。
@@ -301,38 +311,6 @@ define card {
   addTarget $.my.character;
   :heal(2, :e.targets[0]);
   :characterStatus(EdictOfAbsolutionInEffect, :e.targets[0]);
-};
-
-define extension {
-  idHint 300006 as FlamesOfWarExtension;
-  schema ({
-    spirit: "pair<number>",
-    win: "pair<boolean>",
-  });
-  initialState ({
-    spirit: [0, 0],
-    win: [false, false],
-  });
-  description "记录双方斗争之火的「斗志」，并在行动阶段开始时设置斗争之火的胜者";
-  mutateWhen onDamageOrHeal,
-    ((st, e) => {
-      if (e.sourceWho !== e.targetWho) {
-        st.spirit[e.sourceWho] += e.damageInfo.value;
-      }
-    });
-  mutateWhen onActionPhase,
-    ((st) => {
-      const currentSpirits = [...st.spirit];
-      st.win = [false, false];
-      if (currentSpirits[0] >= currentSpirits[1]) {
-        st.win[0] = true;
-        st.spirit[0] = 0;
-      }
-      if (currentSpirits[0] <= currentSpirits[1]) {
-        st.win[1] = true;
-        st.spirit[1] = 0;
-      }
-    });
 };
 
 /**
@@ -362,25 +340,26 @@ define card {
   undiscoverable;
   support {
     variable spirit, 0;
-    associateExtension FlamesOfWarExtension;
-    on staged {
-      :setExtensionState((st) => {
-        st.spirit[:self.who] = :getVariable("spirit");
-      });
-    };
     on dealDamage {
-      :setVariable("spirit", :getExtensionState().spirit[:self.who]);
-    };
-    on actionPhase {
-      :setVariable("spirit", :getExtensionState().spirit[:self.who]);
-      if (:getExtensionState().win[:self.who]) {
-        :characterStatus(FlamesOfWarInEffect, $.my.active);
+      if (!:e.target.isMine()) {
+        :addVariable("spirit", :e.value);
       }
     };
-    on selfDispose {
-      :setExtensionState((st) => {
-        st.spirit[:self.who] = 0;
-      });
+    on actionPhase {
+      usage perRound, 1 {
+        name usagePerRound;
+      };
+      const mySpirit = :getVariable("spirit");
+      const oppSupport = :query($.opp.support.def(FlamesOfWar));
+      const oppSpirit = oppSupport?.getVariable("spirit") ?? 0;
+      if (mySpirit > oppSpirit) {
+        :characterStatus(FlamesOfWarInEffect, $.my.active);
+        :setVariable("spirit", 0);
+        // 判断胜利后，另一方的斗争之火不再结算
+        if (oppSupport) {
+          oppSupport.setVariable("usagePerRound", 0);
+        }
+      }
     };
   };
 };
@@ -388,6 +367,7 @@ define card {
 /**
  * @id 330010
  * @name 归火圣夜巡礼
+ * @cost 1*Legend
  * @description
  * 在双方场上生成斗争之火，然后我方场上的斗争之火的「斗志」+1。（斗争之火会将各自阵营对对方造成的伤害记录为「斗志」，每回合行动阶段开始时「斗志」较高的一方会清空「斗志」，使当前出战角色在本回合中造成的伤害+1。）
  * （整局游戏只能打出一张「秘传」卡牌；这张牌一定在你的起始手牌中）
@@ -396,27 +376,17 @@ define card {
   id 330010 as PilgrimageOfTheReturnOfTheSacredFlame;
   since "v5.3.0";
   legend;
-  const myExistsFlame = :query($.my.support.def(FlamesOfWar));
-  const oppExistsFlame = :query($.opp.support.def(FlamesOfWar));
-  if (myExistsFlame) {
-    myExistsFlame.addVariable("spirit", 1);
-  } else if (:remainingSupportCount("my") > 0) {
-    :createEntity(
-      "support",
-      FlamesOfWar,
-      {
-        who: :self.who,
-        type: "supports",
-      },
-      {
-        overrideVariables: {
-          spirit: 1,
-        },
-      },
-    );
+  let myFlame = :query($.my.support.def(FlamesOfWar)) ?? null;
+  type FlameEntity = typeof myFlame;
+  const oppFlame = :query($.opp.support.def(FlamesOfWar)) ?? null;
+  if (!myFlame) {
+    myFlame = :createEntity("support", FlamesOfWar, {
+      who: :self.who,
+      type: "supports",
+    }) as FlameEntity;
   }
-  if (oppExistsFlame) {
-  } else if (:remainingSupportCount("opp") > 0) {
+  myFlame?.addVariable("spirit", 1);
+  if (!oppFlame) {
     :createEntity("support", FlamesOfWar, {
       who: flip(:self.who),
       type: "supports",
@@ -427,6 +397,7 @@ define card {
 /**
  * @id 330011
  * @name 为「死」而战
+ * @cost 1*Aligned, 1*Legend
  * @description
  * 抓1张牌。
  * 我方场上每存在一个被击倒的角色：我方剩余全体角色+2最大生命上限。
@@ -448,6 +419,7 @@ define card {
 /**
  * @id 330012
  * @name 「沙中遗事」
+ * @cost 1*Legend
  * @description
  * 挑选一项：
  * 将敌方1张当前元素骰费用最高的手牌置于牌组底。
@@ -481,6 +453,7 @@ define combatStatus {
 /**
  * @id 330013
  * @name 另一侧的霜月
+ * @cost 1*Legend
  * @description
  * 打出及每个行动阶段开始时：赋予我方随机1张手牌费用降低。
  * （整局游戏只能打出一张「秘传」卡牌；这张牌一定在你的起始手牌中）
@@ -494,4 +467,83 @@ define card {
     :attachCostReduction(target);
   }
   :combatStatus(TheOtherSideOfTheFrostmoonInEffect);
+};
+
+/**
+ * @id 330014
+ * @name 三月重临
+ * @cost 3*Aligned, 1*Legend
+ * @description
+ * 舍弃3张当前元素骰费用最高的手牌。
+ * 下个回合开始时，治疗我方场上所有角色3点。
+ * 下下个回合开始时，将所舍弃的3张牌加入手牌，并赋予这些牌3层费用降低。
+ * （整局游戏只能打出一张「秘传」卡牌；这张牌一定在你的起始手牌中）
+ */
+define card {
+  id 330014 as ReturnOfTheThreeMoons;
+  since "v7.1.0";
+  cost DiceType.Aligned, 3;
+  legend;
+  :combatStatus(MoonlitRadiance);
+  :combatStatus(TheReturn);
+}
+
+/**
+ * @id 300011
+ * @name 月华
+ * @description
+ * 行动阶段开始时：治疗我方场上所有角色3点。
+ */
+define combatStatus {
+  id 300011 as MoonlitRadiance;
+  once actionPhase {
+    :heal(3, $.my.character);
+  };
+};
+
+/**
+ * @id 300012
+ * @name 重临
+ * @description
+ * 行动阶段开始时：若此牌倒计时为0，则将所舍弃的3张牌加入手牌，并赋予这些牌3层费用降低。
+ */
+define combatStatus {
+  id 300012 as TheReturn;
+  variable card0Id, 0;
+  variable card1Id, 0;
+  variable card2Id, 0;
+  on selfEnter {
+    const originalHandIds = :player.hands.map((card) => card.id);
+    const discardCards = :discardMaxCostHands(3);
+    const cardsToRecreate = discardCards.toSorted(
+      (a, b) => originalHandIds.indexOf(b.id) - originalHandIds.indexOf(a.id),
+    );
+    const slots = [...["card0Id", "card1Id", "card2Id"] as const];
+    for (const card of cardsToRecreate) {
+      const slot = slots.shift();
+      if (slot) {
+        :setVariable(slot, card.definition.id);
+      }
+    }
+  };
+  on actionPhase {
+    usage 2 { autoDispose false; };
+  };
+  on actionPhase {
+    when :( :getVariable("usage") <= 0 );
+    for (const cardId of [
+      :getVariable("card0Id"),
+      :getVariable("card1Id"),
+      :getVariable("card2Id"),
+    ]) {
+      if (!cardId) {
+        continue;
+      }
+      const card = :createHandCard(cardId as CardHandle);
+      if (card) {
+        :attachCostReduction(card, 3);
+      }
+    }
+    :dispose();
+  };
 };

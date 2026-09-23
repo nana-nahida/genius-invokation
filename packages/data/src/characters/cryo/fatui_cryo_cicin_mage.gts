@@ -27,25 +27,32 @@ import { $, DamageType, DiceType, type SummonHandle } from "@gi-tcg/core/data";
 define summon {
   id 121011 as CryoCicins;
   hint DamageType.Cryo, 1;
+  variable talentExtraDamage, 0;
   on endPhase {
     usage 2 {
-      append;
-      range 3;
+      append 3;
     };
     :damage(DamageType.Cryo, 1);
   };
   on useSkill {
-    when :(
-      :e.skill.caller.definition.id === FatuiCryoCicinMage &&
-        :e.isSkillType("normal")
-    );
-    :addVariable("usage", 1);
+    when :( :e.skill.definition.id === CicinIcicle );
+    if (:getVariable("usage") < 3) {
+      :addVariable("usage", 1);
+    } else if (:query($.my.equipped.def(CicinsColdGlare))) {
+      :setVariable("talentExtraDamage", 1);
+    }
   };
   on damaged {
     when :(
       :e.target.definition.id === FatuiCryoCicinMage && :e.getReaction()
     );
     :consumeUsage();
+  };
+  // 天赋效果
+  on useSkill {
+    when :( :getVariable("talentExtraDamage") );
+    :setVariable("talentExtraDamage", 0);
+    :damage(DamageType.Cryo, 2);
   };
 };
 
@@ -82,6 +89,7 @@ define combatStatus {
 /**
  * @id 21011
  * @name 冰萤棱锥
+ * @cost 1*Cryo, 2*Void
  * @description
  * 造成1点冰元素伤害。
  */
@@ -96,6 +104,7 @@ define skill {
 /**
  * @id 21012
  * @name 雾虚摇唤
+ * @cost 3*Cryo
  * @description
  * 造成1点冰元素伤害，召唤冰萤。
  */
@@ -107,7 +116,7 @@ define skill {
   const talent = :self.hasEquipment(CicinsColdGlare);
   const cicins = :query($.my.summon.def(CryoCicins));
   if (talent && cicins && cicins.getVariable("usage") >= 2) {
-    talent.setVariable("dealDamage", 1);
+    cicins.setVariable("talentExtraDamage", 1);
   }
   :summon(CryoCicins);
 };
@@ -115,6 +124,7 @@ define skill {
 /**
  * @id 21013
  * @name 冰枝白花
+ * @cost 3*Cryo, 3*Energy
  * @description
  * 造成5点冰元素伤害，本角色附着冰元素，生成流萤护罩。
  */
@@ -131,6 +141,8 @@ define skill {
 /**
  * @id 2101
  * @name 愚人众·冰萤术士
+ * @hp 10
+ * @energy 3
  * @description
  * 至少在雾虚草耗尽之前，冰萤不会离她而去。
  */
@@ -146,6 +158,7 @@ define character {
 /**
  * @id 221011
  * @name 冰萤寒光
+ * @cost 3*Cryo
  * @description
  * 战斗行动：我方出战角色为愚人众·冰萤术士时，装备此牌。
  * 愚人众·冰萤术士装备此牌后，立刻使用一次雾虚摇唤。
@@ -157,14 +170,8 @@ define card {
   since "v3.7.0";
   cost DiceType.Cryo, 3;
   talent FatuiCryoCicinMage {
-    variable dealDamage, 0;
     on staged {
       :useSkill(MistySummons);
-    };
-    on useSkill {
-      when :( :getVariable("dealDamage") );
-      :damage(DamageType.Cryo, 2);
-      :setVariable("dealDamage", 0);
     };
   };
 };

@@ -13,12 +13,20 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import { DiceType, DamageType, $, Aura, type CardHandle, Reaction } from "@gi-tcg/core/data";
+import {
+  DiceType,
+  DamageType,
+  $,
+  Aura,
+  type CardHandle,
+  Reaction,
+} from "@gi-tcg/core/data";
 import { AgileSwitch } from "../../commons.gts";
 
 /**
  * @id 115161
  * @name 呼噜噜秘藏瓶
+ * @cost 4*Aligned
  * @description
  * 雅珂达切换为出战角色时:如果敌方出战角色附着有火/水/雷/冰元素，则将此牌转化为对应元素。
  * 战斗行动：对敌方出战角色造成2点风元素伤害，然后再造成1点风元素伤害。
@@ -32,17 +40,24 @@ define card {
   on switchActive {
     when :(
       :e.switchInfo.to.definition.id === Jahoda &&
-        ([Aura.Pyro, Aura.Hydro, Aura.Electro, Aura.Cryo] as Aura[]).includes(
-          :query($.opp.active)!.aura,
-        )
+        (
+          [
+            Aura.Pyro,
+            Aura.Hydro,
+            Aura.Electro,
+            Aura.Cryo,
+            Aura.CryoDendro,
+          ] as Aura[]
+        ).includes(:query($.opp.active.includesDefeated)!.aura)
     );
     const TRANSFORM_MAP: Partial<Record<Aura, CardHandle>> = {
       [Aura.Pyro]: PurrloinedTreasureFlaskPyro,
       [Aura.Hydro]: PurrloinedTreasureFlaskHydro,
       [Aura.Electro]: PurrloinedTreasureFlaskElectro,
       [Aura.Cryo]: PurrloinedTreasureFlaskCryo,
+      [Aura.CryoDendro]: PurrloinedTreasureFlaskCryo,
     };
-    const target = TRANSFORM_MAP[:query($.opp.active)!.aura];
+    const target = TRANSFORM_MAP[:query($.opp.active.includesDefeated)!.aura];
     if (target) {
       :transformDefinition(:self, target);
     }
@@ -50,11 +65,12 @@ define card {
   :damage(DamageType.Anemo, 2);
   :eventBoundary();
   :damage(DamageType.Anemo, 1, $.macros.oppActivePrioritized);
-}
+};
 
 /**
  * @id 115162
  * @name 呼噜噜秘藏瓶·火
+ * @cost 4*Aligned
  * @description
  * 战斗行动：对敌方出战角色造成2点火元素伤害，然后再造成1点火元素伤害。
  */
@@ -67,11 +83,12 @@ define card {
   :damage(DamageType.Pyro, 2);
   :eventBoundary();
   :damage(DamageType.Pyro, 1, $.macros.oppActivePrioritized);
-}
+};
 
 /**
  * @id 115163
  * @name 呼噜噜秘藏瓶·水
+ * @cost 4*Aligned
  * @description
  * 战斗行动：对敌方出战角色造成2点水元素伤害，然后再造成1点水元素伤害。
  */
@@ -84,11 +101,12 @@ define card {
   :damage(DamageType.Hydro, 2);
   :eventBoundary();
   :damage(DamageType.Hydro, 1, $.macros.oppActivePrioritized);
-}
+};
 
 /**
  * @id 115164
  * @name 呼噜噜秘藏瓶·雷
+ * @cost 4*Aligned
  * @description
  * 战斗行动：对敌方出战角色造成2点雷元素伤害，然后再造成1点雷元素伤害。
  */
@@ -101,11 +119,12 @@ define card {
   :damage(DamageType.Electro, 2);
   :eventBoundary();
   :damage(DamageType.Electro, 1, $.macros.oppActivePrioritized);
-}
+};
 
 /**
  * @id 115165
  * @name 呼噜噜秘藏瓶·冰
+ * @cost 4*Aligned
  * @description
  * 战斗行动：对敌方出战角色造成2点冰元素伤害，然后再造成1点冰元素伤害。
  */
@@ -118,7 +137,7 @@ define card {
   :damage(DamageType.Cryo, 2);
   :eventBoundary();
   :damage(DamageType.Cryo, 1, $.macros.oppActivePrioritized);
-}
+};
 
 /**
  * @id 115166
@@ -140,11 +159,12 @@ define combatStatus {
     }
     :heal(2, $.macros.myMostInjured);
   };
-}
+};
 
 /**
  * @id 15161
  * @name 见机行矢
+ * @cost 1*Anemo, 2*Void
  * @description
  * 造成2点物理伤害。
  */
@@ -154,11 +174,12 @@ define skill {
   cost DiceType.Anemo, 1;
   cost DiceType.Void, 2;
   :damage(DamageType.Physical, 2);
-}
+};
 
 /**
  * @id 15162
  * @name 奇策·财富分配方案
+ * @cost 3*Anemo
  * @description
  * 造成2点风元素伤害，生成1层敏捷切换，我方切换到下一个角色。如果手牌中没有任意元素的呼噜噜秘藏瓶，则生成手牌呼噜噜秘藏瓶；否则，赋予手牌中所有的呼噜噜秘藏瓶费用降低。
  */
@@ -187,11 +208,12 @@ define skill {
       :attachCostReduction(bottle);
     }
   }
-}
+};
 
 /**
  * @id 15163
  * @name 秘器·猎人的七道具
+ * @cost 3*Anemo, 2*Energy
  * @description
  * 造成3点风元素伤害，生成猫型家用互助协调器。
  */
@@ -202,14 +224,15 @@ define skill {
   cost DiceType.Energy, 2;
   :damage(DamageType.Anemo, 3);
   :combatStatus(PurrsonalCoordinatedAssistanceRobots);
-}
+};
 
 /**
  * @id 15164
  * @name 月兆祝赐·檐上趱行
+ * @cost
  * @description
  * 【被动】战斗开始时，生成手牌呼噜噜秘藏瓶。
- * 我方触发月反应或扩散反应后，使我方手牌中所有呼噜噜秘藏瓶附着费用降低。（每回合2次）
+ * 我方触发月曜反应或扩散反应后，使我方手牌中所有呼噜噜秘藏瓶附着费用降低。（每回合2次）
  */
 define skill {
   id 15164 as MoonsignBenedictionRooftopDash;
@@ -245,11 +268,12 @@ define skill {
       }
     };
   };
-}
+};
 
 /**
  * @id 15165
  * @name 月兆祝赐·檐上趱行
+ * @cost
  * @description
  * 【被动】战斗开始时，生成手牌呼噜噜秘藏瓶。
  * 我方触发月反应或扩散反应后，使我方手牌中所有呼噜噜秘藏瓶附着费用降低。（每回合2次）
@@ -258,11 +282,13 @@ define skill {
   id 15165 as MoonsignBenedictionRooftopDash01;
   skillType passive;
   reserved;
-}
+};
 
 /**
  * @id 1516
  * @name 雅珂达
+ * @hp 10
+ * @energy 2
  * @description
  * 千虑秘闻，亦有一得。
  */
@@ -272,12 +298,16 @@ define character {
   tags anemo, bow, nodkrai;
   health 10;
   energy 2;
-  skills StrikeWhileTheArrowsHot, SavvyStrategySplittingTheSpoils, HiddenAcesSevenToolsOfTheHunter, MoonsignBenedictionRooftopDash;
-}
+  skills StrikeWhileTheArrowsHot,
+    SavvyStrategySplittingTheSpoils,
+    HiddenAcesSevenToolsOfTheHunter,
+    MoonsignBenedictionRooftopDash;
+};
 
 /**
  * @id 215161
  * @name 暗巷的黠慧
+ * @cost 3*Anemo
  * @description
  * 战斗行动：我方出战角色为雅珂达时，装备此牌。
  * 雅珂达装备此牌后，立刻使用一次奇策·财富分配方案。
@@ -304,4 +334,4 @@ define card {
       }
     };
   };
-}
+};

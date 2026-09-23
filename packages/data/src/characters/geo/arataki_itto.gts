@@ -27,10 +27,16 @@ define status {
   on increaseSkillDamage {
     when :( :e.viaChargedAttack() );
     usage 1 {
-      append;
-      range 3;
+      append 3;
     };
-    :e.increaseDamage(1);
+    if (
+      :self.master.hasEquipment(AratakiIchiban) && // 装备天赋
+      :countOfSkill(AratakiItto, FightClubLegend) > 0 // 本回合使用过
+    ) {
+      :e.increaseDamage(2);
+    } else {
+      :e.increaseDamage(1);
+    }
   };
   on deductVoidDiceSkill {
     when :( :e.isChargedAttack() && :getVariable("usage") >= 2 );
@@ -54,9 +60,7 @@ define summon {
   on endPhase {
     :damage(DamageType.Geo, 1);
     :dispose();
-    :characterStatus(SuperlativeSuperstrength, ($) =>
-      $.my.character.def(AratakiItto),
-    );
+    :characterStatus(SuperlativeSuperstrength, $.my.character.def(AratakiItto));
   };
   on decreaseDamaged {
     when :( :e.target.isActive() );
@@ -69,9 +73,7 @@ define summon {
     usage 1 {
       name "addStatusUsage";
     };
-    :characterStatus(SuperlativeSuperstrength, ($) =>
-      $.my.character.def(AratakiItto),
-    );
+    :characterStatus(SuperlativeSuperstrength, $.my.character.def(AratakiItto));
   };
 };
 
@@ -104,6 +106,7 @@ define status {
 /**
  * @id 16051
  * @name 喧哗屋传说
+ * @cost 1*Geo, 2*Void
  * @description
  * 造成2点物理伤害。
  */
@@ -112,20 +115,13 @@ define skill {
   skillType normal;
   cost DiceType.Geo, 1;
   cost DiceType.Void, 2;
-  if (
-    :self.hasEquipment(AratakiIchiban) && // 带有装备
-    :countOfSkill() > 0 && // 本回合使用过
-    :skillInfo.charged // 触发乱神之怪力（重击）
-  ) {
-    :damage(DamageType.Physical, 3);
-  } else {
-    :damage(DamageType.Physical, 2);
-  }
+  :damage(DamageType.Physical, 2);
 };
 
 /**
  * @id 16052
  * @name 魔杀绝技·赤牛发破！
+ * @cost 3*Geo
  * @description
  * 造成1点岩元素伤害，召唤阿丑，本角色附属乱神之怪力。
  */
@@ -141,6 +137,7 @@ define skill {
 /**
  * @id 16053
  * @name 最恶鬼王·一斗轰临！！
+ * @cost 3*Geo, 3*Energy
  * @description
  * 造成4点岩元素伤害，本角色附属怒目鬼王。
  */
@@ -156,6 +153,8 @@ define skill {
 /**
  * @id 1605
  * @name 荒泷一斗
+ * @hp 10
+ * @energy 3
  * @description
  * 「荒泷卡牌游戏王中王一斗」
  */
@@ -173,6 +172,7 @@ define character {
 /**
  * @id 216051
  * @name 荒泷第一
+ * @cost 1*Geo, 2*Void
  * @description
  * 战斗行动：我方出战角色为荒泷一斗时，装备此牌。
  * 荒泷一斗装备此牌后，立刻使用一次喧哗屋传说。

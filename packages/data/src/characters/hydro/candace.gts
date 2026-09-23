@@ -18,6 +18,7 @@ import { $, DamageType, DiceType, type SkillHandle } from "@gi-tcg/core/data";
 /**
  * @id 12074
  * @name 苍鹭震击
+ * @cost
  * @description
  * （需准备1个行动轮）
  * 造成3点水元素伤害。
@@ -39,6 +40,10 @@ define skill {
 define status {
   id 112071 as HeronShield;
   shield 2;
+  on switchActive {
+    when :( :self.master.id === :e.switchInfo.from?.id );
+    :dispose();
+  };
 };
 
 /**
@@ -131,6 +136,7 @@ define combatStatus {
 /**
  * @id 12071
  * @name 流耀枪术·守势
+ * @cost 1*Hydro, 2*Void
  * @description
  * 造成2点物理伤害。
  */
@@ -145,6 +151,7 @@ define skill {
 /**
  * @id 12072
  * @name 圣仪·苍鹭庇卫
+ * @cost 3*Hydro
  * @description
  * 本角色附属苍鹭护盾并准备技能：苍鹭震击。
  */
@@ -159,6 +166,7 @@ define skill {
 /**
  * @id 12073
  * @name 圣仪·灰鸰衒潮
+ * @cost 3*Hydro, 2*Energy
  * @description
  * 造成2点水元素伤害，生成赤冕祝祷。
  */
@@ -178,6 +186,8 @@ define skill {
 /**
  * @id 1207
  * @name 坎蒂丝
+ * @hp 11
+ * @energy 2
  * @description
  * 赤沙浮金，恪誓戍御。
  */
@@ -196,6 +206,7 @@ define character {
 /**
  * @id 212071
  * @name 衍溢的汐潮
+ * @cost 3*Hydro, 2*Energy
  * @description
  * 战斗行动：我方出战角色为坎蒂丝时，装备此牌。
  * 坎蒂丝装备此牌后，立刻使用一次圣仪·灰鸰衒潮。

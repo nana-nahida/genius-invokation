@@ -34,6 +34,7 @@ define status {
 /**
  * @id 14021
  * @name 钢脊
+ * @cost 1*Electro, 2*Void
  * @description
  * 造成2点物理伤害。
  */
@@ -48,6 +49,7 @@ define skill {
 /**
  * @id 14022
  * @name 利爪与苍雷
+ * @cost 3*Electro
  * @description
  * 造成3点雷元素伤害。
  */
@@ -61,6 +63,7 @@ define skill {
 /**
  * @id 14023
  * @name 雷牙
+ * @cost 3*Electro, 2*Energy
  * @description
  * 造成3点雷元素伤害，本角色附属雷狼。
  */
@@ -76,6 +79,8 @@ define skill {
 /**
  * @id 1402
  * @name 雷泽
+ * @hp 10
+ * @energy 2
  * @description
  * 「牌，难。」
  * 「但，有朋友…」
@@ -92,6 +97,7 @@ define character {
 /**
  * @id 214021
  * @name 觉醒
+ * @cost 3*Electro
  * @description
  * 战斗行动：我方出战角色为雷泽时，装备此牌。
  * 雷泽装备此牌后，立刻使用一次利爪与苍雷。
@@ -119,3 +125,32 @@ define card {
     };
   };
 };
+
+/**
+ * @id 214022
+ * @name 苍雷奔涌
+ * @cost 2*Electro
+ * @description
+ * 战斗行动：我方出战角色为雷泽时，装备此牌。
+ * 我方雷泽如果未附属雷狼，则自身附属持续回合为1的雷狼。
+ * 装备有此牌的雷泽附属雷狼期间，我方雷狼造成的伤害+1。
+ * （牌组中包含雷泽，才能加入牌组）
+ */
+define card {
+  id 214022 as SurgeOfLightning;
+  since "v7.1.0";
+  cost DiceType.Electro, 2;
+  talent Razor, action {
+    on staged {
+      if (!:e.targets[0].hasStatus(TheWolfWithin)) {
+        :characterStatus(TheWolfWithin, :e.targets[0], {
+          overrideVariables: { duration: 1 },
+        });
+      }
+    }
+    on increaseDamage {
+      when :( :e.source.definition.id === TheWolfWithin );
+      :e.increaseDamage(1);
+    }
+  }
+}

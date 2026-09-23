@@ -24,12 +24,16 @@ import { $, DamageType, DiceType } from "@gi-tcg/core/data";
  */
 define status {
   id 115062 as Descent;
+  variable dealDamage, 0;
   on deductOmniDiceSwitch {
     when :( :self.master.isActive() );
     :e.deductOmniCost(1);
+    :setVariable("dealDamage", 1);
   };
   on switchActive {
-    when :( :self.master.id === :e.switchInfo.from?.id );
+    when :(
+      :self.master.id === :e.switchInfo.from?.id && :getVariable("dealDamage")
+    );
     usage 1;
     :damage(DamageType.Anemo, 1);
   };
@@ -48,12 +52,16 @@ define status {
     when :( :e.viaSkillType("normal") );
     usage 2;
     :e.increaseDamage(2);
+    if (:self.master.hasEquipment(GalesOfReverie) && :e.via.charged) {
+      :characterStatus(Descent, :self.master);
+    }
   };
 };
 
 /**
  * @id 15061
  * @name 行幡鸣弦
+ * @cost 1*Anemo, 2*Void
  * @description
  * 造成1点风元素伤害。
  */
@@ -72,6 +80,7 @@ define skill {
 /**
  * @id 15062
  * @name 羽画·风姿华歌
+ * @cost 3*Anemo
  * @description
  * 造成2点风元素伤害，本角色附属优风倾姿。
  */
@@ -86,6 +95,7 @@ define skill {
 /**
  * @id 15063
  * @name 狂言·式乐五番
+ * @cost 3*Anemo, 3*Energy
  * @description
  * 造成7点风元素伤害；如果角色附属有优风倾姿，则将其移除并使此伤害+1。
  */
@@ -106,6 +116,8 @@ define skill {
 /**
  * @id 1506
  * @name 流浪者
+ * @hp 10
+ * @energy 3
  * @description
  * 千般劫渡，不可得知。
  */
@@ -121,6 +133,7 @@ define character {
 /**
  * @id 215061
  * @name 梦迹一风
+ * @cost 4*Anemo
  * @description
  * 战斗行动：我方出战角色为REALNAME[ID(1)时，装备此牌。
  * #REALNAME[ID(1)装备此牌后，立刻使用一次羽画·风姿华歌。
@@ -134,10 +147,6 @@ define card {
   talent Wanderer {
     on staged {
       :useSkill(HanegaSongOfTheWind);
-    };
-    on dealDamage {
-      when :( :self.master.hasStatus(Windfavored) && :e.via.charged );
-      :characterStatus(Descent, :self.master);
     };
   };
 };

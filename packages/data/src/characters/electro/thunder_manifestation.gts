@@ -13,16 +13,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import {
-  $,
-  customEvent,
-  DamageType,
-  DiceType,
-  type CombatStatusHandle,
-  type StatusHandle,
-} from "@gi-tcg/core/data";
+import { $, customEvent, DamageType, DiceType } from "@gi-tcg/core/data";
 
-const TalentShouldDrawCard = customEvent(
+const TalentShouldDrawCard = customEvent<0 | 1>(
   "thunderManifestation/talentShouldDrawCard",
 );
 
@@ -36,6 +29,7 @@ const TalentShouldDrawCard = customEvent(
 define status {
   id 124022 as LightningRod;
   conflictWith crossCharacter;
+  variable disposeDrawCard, 0;
   on increaseDamaged {
     when :(
       [
@@ -44,15 +38,17 @@ define status {
       ].includes(:e.source.definition.id)
     );
     :e.increaseDamage(1);
+    :setVariable("disposeDrawCard", 1);
     :dispose();
   };
   on damaged {
-    :emitCustomEvent(TalentShouldDrawCard);
+    :emitCustomEvent(TalentShouldDrawCard, :e.targetWho);
   };
   on selfDispose {
     // 雷音权现对已带有雷鸣探知的角色造成伤害会弃置雷鸣探知
     // 但此行为也会触发天赋的抽牌
-    :emitCustomEvent(TalentShouldDrawCard);
+    when :( :getVariable("disposeDrawCard") );
+    :emitCustomEvent(TalentShouldDrawCard, :e.who);
   };
 };
 
@@ -87,6 +83,7 @@ define combatStatus {
   id 124021 as LightningStrikeProbe;
   on useSkill {
     usage perRound, 1;
+    // 实际效果应为技能调用者而非出战角色
     :characterStatus(LightningRod, :e.skillCaller.cast<"character">());
   };
 };
@@ -105,6 +102,7 @@ define combatStatus {
 /**
  * @id 24021
  * @name 轰霆翼斩
+ * @cost 1*Electro, 2*Void
  * @description
  * 造成1点雷元素伤害。
  */
@@ -119,6 +117,7 @@ define skill {
 /**
  * @id 24022
  * @name 雷墙倾轧
+ * @cost 3*Electro
  * @description
  * 对附属有雷鸣探知的敌方角色造成3点雷元素伤害。（如果敌方不存在符合条件角色，则改为对出战角色造成伤害）
  */
@@ -137,6 +136,7 @@ define skill {
 /**
  * @id 24023
  * @name 轰雷禁锢
+ * @cost 3*Electro, 2*Energy
  * @description
  * 造成2点雷元素伤害，召唤轰雷禁锢。
  */
@@ -152,6 +152,7 @@ define skill {
 /**
  * @id 24024
  * @name 雷霆探知
+ * @cost
  * @description
  * 【被动】战斗开始时，在敌方场上生成雷霆探针。
  */
@@ -167,6 +168,8 @@ define skill {
 /**
  * @id 2402
  * @name 雷音权现
+ * @hp 10
+ * @energy 2
  * @description
  * 只要土地中的怨恨不消，那雷鸣也不会断绝吧。
  */
@@ -185,6 +188,7 @@ define character {
 /**
  * @id 224021
  * @name 悲号回唱
+ * @cost 3*Electro
  * @description
  * 战斗行动：我方出战角色为雷音权现时，装备此牌。
  * 雷音权现装备此牌后，立刻使用一次雷墙倾轧。
@@ -200,6 +204,7 @@ define card {
       :useSkill(StrifefulLightning);
     };
     on TalentShouldDrawCard {
+      when :( :e.arg !== :self.who );
       listenTo all;
       usage perRound, 1;
       :drawCards(1);

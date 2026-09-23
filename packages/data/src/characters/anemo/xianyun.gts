@@ -50,8 +50,7 @@ define status {
   on switchActive {
     when :( :self.master.id === :e.switchInfo.to.id );
     usage 1 {
-      append;
-      range 2;
+      append 2;
     };
     :damage(DamageType.Anemo, 1);
   };
@@ -69,8 +68,7 @@ define combatStatus {
   since "v5.0.0";
   on deductOmniDiceSwitch {
     usage 1 {
-      append;
-      range 2;
+      append 2;
     };
     :e.deductOmniCost(1);
   };
@@ -103,6 +101,7 @@ define card {
 /**
  * @id 15101
  * @name 清风散花词
+ * @cost 1*Anemo, 2*Void
  * @description
  * 造成1点风元素伤害。
  */
@@ -117,6 +116,7 @@ define skill {
 /**
  * @id 15102
  * @name 朝起鹤云
+ * @cost 3*Anemo
  * @description
  * 造成1点风元素伤害，生成步天梯，本角色附属闲云冲击波。
  */
@@ -132,6 +132,7 @@ define skill {
 /**
  * @id 15103
  * @name 暮集竹星
+ * @cost 3*Anemo, 2*Energy
  * @description
  * 造成1点风元素伤害，治疗所有我方角色1点，生成手牌竹星。
  * （装备有竹星的角色可以使用特技：仙力助推）
@@ -149,6 +150,8 @@ define skill {
 /**
  * @id 1510
  * @name 闲云
+ * @hp 11
+ * @energy 2
  * @description
  * 侠中影，云里客。
  */
@@ -164,6 +167,7 @@ define character {
 /**
  * @id 215101
  * @name 知是留云僊
+ * @cost 3*Anemo
  * @description
  * 战斗行动：我方出战角色为闲云时，装备此牌。
  * 闲云装备此牌后，立刻使用一次朝起鹤云。

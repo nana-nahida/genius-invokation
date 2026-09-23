@@ -40,7 +40,7 @@ define combatStatus {
 define combatStatus {
   id 111131 as ScopeOutSoftSpots;
   since "v5.2.0";
-  variable layer, 0 {
+  variable layer, 1 {
     append;
   };
   on useSkill {
@@ -84,6 +84,7 @@ define summon {
 /**
  * @id 11131
  * @name 教会枪术
+ * @cost 1*Cryo, 2*Void
  * @description
  * 造成2点物理伤害。
  */
@@ -98,6 +99,7 @@ define skill {
 /**
  * @id 11132
  * @name 噬罪的告解
+ * @cost 3*Cryo
  * @description
  * 造成1点冰元素伤害，生成1层洞察破绽。（触发洞察破绽的效果时，会生成强攻破绽。）
  */
@@ -106,16 +108,13 @@ define skill {
   skillType elemental;
   cost DiceType.Cryo, 3;
   :damage(DamageType.Cryo, 1);
-  :combatStatus(ScopeOutSoftSpots, "my", {
-    overrideVariables: {
-      layer: 1,
-    },
-  });
+  :combatStatus(ScopeOutSoftSpots);
 };
 
 /**
  * @id 11133
  * @name 终命的圣礼
+ * @cost 3*Cryo, 2*Energy
  * @description
  * 造成1点冰元素伤害，生成2层洞察破绽，召唤极寒的冰枪。
  */
@@ -136,6 +135,8 @@ define skill {
 /**
  * @id 1113
  * @name 罗莎莉亚
+ * @hp 10
+ * @energy 2
  * @description
  * 「黑影源于光明，光明却不统御黑影。」
  */
@@ -151,6 +152,7 @@ define character {
 /**
  * @id 211131
  * @name 代行裁判
+ * @cost 3*Cryo
  * @description
  * 战斗行动：我方出战角色为罗莎莉亚时，装备此牌。
  * 罗莎莉亚装备此牌后，立刻使用一次噬罪的告解。
@@ -167,11 +169,13 @@ define card {
     };
     on useSkill {
       when :( :e.skill.definition.id === RavagingConfession );
+      usage perRound, 1 { name "usagePerRound1"; };
       :createHandCard(ChangingShifts);
     };
     on entityEnter {
-      when :( :e.entity.id === StrikeWhereItHurts );
+      when :( :e.entity.definition.id === StrikeWhereItHurts );
       listenTo samePlayer;
+      usage perRound, 1 { name "usagePerRound1"; };
       :createHandCard(ChangingShifts);
     };
   };

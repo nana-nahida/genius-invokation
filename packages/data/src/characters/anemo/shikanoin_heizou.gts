@@ -39,11 +39,11 @@ define status {
         :self.getVariable("henkaku") >= 2
     );
     void 0;
-    // 使用 勠心拳 后，我方继续行动一个回合
+    // 使用[勠心拳]后，我方继续行动一个回合
     if (!:oppPlayer.declaredEnd) {
       :continueNextTurn();
     }
-    // 为 角色 添加 增伤数值
+    // 为角色添加增伤数值
     if (:self.master.hasEquipment(CuriousCasefiles)) {
       :self.master.setVariable("increaseDmg", 2);
     } else {
@@ -60,6 +60,7 @@ define status {
 /**
  * @id 15135
  * @name 勠心拳·蓄力
+ * @cost
  * @description
  * 造成4点风元素伤害。
  */
@@ -68,7 +69,7 @@ define skill {
   skillType elemental;
   prepared;
   void 0;
-  // 读取 角色 的 增伤数值，随后清空
+  // 读取角色的增伤数值，随后清空
   const increaseDmg = :self.getVariable("increaseDmg") ?? 0;
   :damage(DamageType.Anemo, 4 + increaseDmg);
   :self.setVariable("increaseDmg", 0);
@@ -84,6 +85,7 @@ define status {
   id 115131 as PreexistingGuilt;
   since "v5.8.0";
   prepare HeartstopperStrikeCharge;
+  // 准备技能释放失败不消耗增伤，可被下次使用
 };
 
 /**
@@ -153,6 +155,7 @@ define status {
 /**
  * @id 15131
  * @name 不动流格斗术
+ * @cost 1*Anemo, 2*Void
  * @description
  * 造成1点风元素伤害。
  */
@@ -167,6 +170,7 @@ define skill {
 /**
  * @id 15132
  * @name 勠心拳
+ * @cost 3*Anemo
  * @description
  * 准备技能：勠心拳·蓄力
  */
@@ -180,6 +184,7 @@ define skill {
 /**
  * @id 15133
  * @name 聚风蹴
+ * @cost 3*Anemo, 2*Energy
  * @description
  * 造成4点风元素伤害，如果此技能引发了风元素相关反应，则敌方出战角色附属对应元素的聚风真眼。
  */
@@ -212,6 +217,7 @@ define skill {
 /**
  * @id 15134
  * @name 反论稽古
+ * @cost
  * @description
  * 【被动】我方引发了风元素相关反应后：自身附属1层变格。
  */
@@ -230,6 +236,8 @@ define skill {
 /**
  * @id 1513
  * @name 鹿野院平藏
+ * @hp 10
+ * @energy 2
  * @description
  * 天衣但无缝，也惧凉风吹。
  */
@@ -249,6 +257,7 @@ define character {
 /**
  * @id 215131
  * @name 奇想天开捕物帐
+ * @cost 3*Anemo
  * @description
  * 战斗行动：我方出战角色为鹿野院平藏时，装备此牌。
  * 鹿野院平藏装备此牌后，立刻使用一次勠心拳。
