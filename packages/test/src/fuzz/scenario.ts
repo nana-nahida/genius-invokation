@@ -20,6 +20,7 @@ import {
   type CharacterDefinition,
   type EntityDefinition,
   type GameConfig,
+  type GameData,
   type PhaseType,
 } from "@gi-tcg/core";
 import {
@@ -35,8 +36,9 @@ import {
   Summon,
   Support,
 } from "../dsl";
-import { characterOfTalent, type CardPool } from "./deck";
+import { characterOfTalent, getDataCached, type CardPool } from "./deck";
 import type { Prng } from "./prng";
+import { isReachable } from "./reachability";
 
 /**
  * 场景级 fuzz：随机生成一个"中局"状态树（复用 packages/test 的 JSX DSL，
@@ -82,6 +84,9 @@ export interface ScenarioSummary {
 
 const handle = <T>(id: number) => id as unknown as T;
 
+type AttachmentDef =
+  GameData["attachments"] extends ReadonlyMap<number, infer A> ? A : never;
+
 const EQUIPMENT_GROUPS = ["weapon", "artifact", "technique", "talent"] as const;
 const WEAPON_TYPES = ["sword", "claymore", "pole", "catalyst", "bow"];
 const RELATED_ONLY_TAGS = ["preparingSkill", "nightsoulsBlessing"];
@@ -93,6 +98,8 @@ interface Pools {
   support: EntityDefinition[];
   equipment: Record<(typeof EQUIPMENT_GROUPS)[number], EntityDefinition[]>;
   byOwner: Map<number, EntityDefinition[]>;
+  tokens: EntityDefinition[];
+  attachments: AttachmentDef[];
 }
 
 const poolCache = new WeakMap<CardPool, Pools>();
@@ -108,8 +115,15 @@ function scenarioPools(pool: CardPool): Pools {
     support: [],
     equipment: { weapon: [], artifact: [], technique: [], talent: [] },
     byOwner: new Map(),
+    tokens: pool.tokens.filter((d) => isAvailable(d.id, pool)),
+    attachments: [...pool.data.attachments.values()].filter((d) =>
+      isAvailable(d.id, pool),
+    ),
   };
   for (const def of [...pool.data.entities.values()].sort((a, b) => a.id - b.id)) {
+    if (!isAvailable(def.id, pool)) {
+      continue;
+    }
     switch (def.type) {
       case "status":
       case "combatStatus":
@@ -159,11 +173,26 @@ function belongsTo(
 
 /** 角色专属实体：1 + 角色 id + 序号；天赋：2 + 角色 id + 序号 */
 function ownerOf(id: number, pool: CardPool): number | null {
+  return ownerIn(id, pool.data);
+}
+
+function ownerIn(id: number, data: GameData): number | null {
   if (id >= 100000 && id < 200000) {
     const charId = Math.floor((id - 100000) / 10);
-    return pool.data.characters.has(charId) ? charId : null;
+    return data.characters.has(charId) ? charId : null;
   }
-  return characterOfTalent(id, pool.data);
+  return characterOfTalent(id, data);
+}
+
+/**
+ * 该版本的对局里能否出现此实体：宿主角色在本版本不存在的专属实体、
+ * 以及引用者在本版本都不存在的衍生实体，都不能放进状态树。
+ */
+function isAvailable(id: number, pool: CardPool): boolean {
+  if (ownerOf(id, pool) === null && ownerIn(id, getDataCached()) !== null) {
+    return false;
+  }
+  return isReachable(id, pool);
 }
 
 /** 生成实体的可选变量覆盖：只对定义里存在的变量、在界内取值 */
@@ -333,11 +362,11 @@ export function generateScenario(
       ...pool.deckCards,
       ...chars.flatMap((c) => pool.talents.get(c.id) ?? []),
     ];
-    const attachments = [...pool.data.attachments.values()];
+    const { tokens, attachments } = pools;
     const drawCards = (count: number): EntityDefinition[] =>
       Array.from({ length: count }, () =>
-        pool.tokens.length && rng.bool(0.05)
-          ? rng.pick(pool.tokens)
+        tokens.length && rng.bool(0.05)
+          ? rng.pick(tokens)
           : rng.pick(cardCandidates),
       );
     const hands = drawCards(rng.int(0, 11));

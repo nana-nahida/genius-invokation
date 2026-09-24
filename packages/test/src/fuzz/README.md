@@ -13,7 +13,7 @@
 
 ```sh
 pnpm install
-pnpm build "typings...,core...,data..."
+pnpm build "typings...,core...,data...,data-code-analyzer..."
 pnpm --filter @gi-tcg/test fuzz -- run --count 200 --jobs 4
 ```
 
